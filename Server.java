@@ -56,5 +56,6 @@ public class Server extends ServerSocket {
 
     public static void main(String[] args) throws IOException {
         System.out.println("Server is running ...... ");
+        new Server(6666);
     }
 }
