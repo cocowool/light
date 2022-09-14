@@ -2,5 +2,5 @@
 
 A light automation agent run every OS.
 
-Which will support kafka / activemq as event channel.
+Which will support kafka / activemq as event / message channel.
 
