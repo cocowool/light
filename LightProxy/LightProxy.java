@@ -24,6 +24,22 @@ public class LightProxy {
                 }
             }).start();
         }
+
+    }
+
+    private  static String replaceDomain(String line) {
+        String reqUrl = line.split("\s+")[1];
+
+        int endIndex = reqUrl.indexOf("/", 8);
+        String domain = endIndex != -1 ? reqUrl.substring(0, endIndex+1) : reqUrl;
+
+        return line.replaceFirst(domain, "/");
+    }
+
+    private static String repalceConnection(String line) {
+        String prefix = "Proxy-Connection: ";
+
+        return line.replaceFirst(prefix, "Connection: ");
     }
 
     // private static void handleRequest(Socket clientSocket) {
