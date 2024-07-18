@@ -16,9 +16,18 @@ public class LightProxy {
             new Thread( () -> {
                 try(InputStream inputStream = clientSocket.getInputStream() ){
                     BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+                    StringBuilder sb = new StringBuilder();
+
                     while( reader.ready()){
-                        System.out.println(reader.readLine());
+                        // sb = reader.readLine();
+                        // System.out.println(reader.readLine());
+                        sb.append(reader.readLine());
                     }
+
+
+                    System.out.println(sb.toString());
+                    String address = (String)getHeader(sb.toString())[1];
+                    System.out.println(address);
                 }catch(IOException e){
                     e.printStackTrace();
                 }
@@ -28,7 +37,7 @@ public class LightProxy {
     }
 
     private  static String replaceDomain(String line) {
-        String reqUrl = line.split("\s+")[1];
+        String reqUrl = line.split("\\s+")[1];
 
         int endIndex = reqUrl.indexOf("/", 8);
         String domain = endIndex != -1 ? reqUrl.substring(0, endIndex+1) : reqUrl;
@@ -40,6 +49,28 @@ public class LightProxy {
         String prefix = "Proxy-Connection: ";
 
         return line.replaceFirst(prefix, "Connection: ");
+    }
+
+    private static Object[] getHeader(String str) {
+        String hostPrefix = "Host: ";
+        String contentLengthPrefix = "Content-Length: ";
+
+        String host = null;
+        Integer contentLength = null;
+        String[] line = str.split("\r\n");
+        
+        for (String l : line ){
+            System.out.println(l + "\n");
+            if(l.startsWith(hostPrefix)){
+                host = l.substring(hostPrefix.length());
+            }else if ( l.startsWith(contentLengthPrefix)) {
+                contentLength = Integer.parseInt(l.substring(contentLengthPrefix.length()));
+            }
+
+        }
+
+        return new Object[]{host, contentLength};
+        
     }
 
     // private static void handleRequest(Socket clientSocket) {
