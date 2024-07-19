@@ -41,11 +41,26 @@ public class LightProxy {
                     new Thread(()->{
                         try {
                             InputStream socketInputStream = finalSocket.getInputStream();
+
+                            byte[] socketBt = new byte[1024];
                             int socketlen = -1;
+                            boolean isFirstLine = true;
+                            
+
+                            while((socketlen = socketInputStream.read(socketBt)) != -1){
+                                System.out.println(new String(socketBt, 0, socketlen));
+                                clientSocket.getOutputStream().write(socketBt, 0, socketlen);
+                            }
+                            socketInputStream.close();
                         } catch (Exception e) {
                             // TODO: handle exception
+                            e.printStackTrace();
                         }finally{
-
+                            try {
+                                finalSocket.close();
+                            }catch(IOException e){
+                                e.printStackTrace();
+                            }
                         }
                     }).start();
                 }catch(IOException e){
