@@ -10,13 +10,13 @@ public class LightProxy {
         System.out.println("Server is listening on port " + PORT);
 
         while( true) {
-            Socket clientSocket = serverSocket.accept();
-            System.out.println("received connection from " + clientSocket.getInetAddress().getHostAddress());
+            Socket accept = serverSocket.accept();
+            System.out.println("received connection from " + accept.getInetAddress().getHostAddress());
 
             // new Thread( () -> handleRequest(clientSocket)).start();
             new Thread( () -> {
                 // 接收客户端请求
-                try(InputStream inputStream = clientSocket.getInputStream() ){
+                try(InputStream inputStream = accept.getInputStream() ){
                     BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
 
                     StringBuilder sb = new StringBuilder();
