@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 
 public class LightProxy {
     private  static final int PORT = 8989;
@@ -14,29 +15,11 @@ public class LightProxy {
 
             // new Thread( () -> handleRequest(clientSocket)).start();
             new Thread( () -> {
+                // 接收客户端请求
                 try(InputStream inputStream = clientSocket.getInputStream() ){
                     BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+
                     StringBuilder sb = new StringBuilder();
-                    byte[] bt = new byte[1024];
-                    int len = -1;
-                    boolean isFirstLine = true;
-                    int contentLength = -1;
-
-                    while ((len = inputStream.read(bt)) != -1){
-                        if(isFirstLine){
-                            isFirstLine = false;
-                            String replace = replaceDomain(bt, len);
-
-                            if(replace.startsWith("CONNECT")){
-                                len = -1;
-                                break;
-                            }
-                            sb.append(replace);
-                        }else {
-                            sb.append(new String(bt, 0, len));
-                        }
-                    }
-
                     while( reader.ready()){
                         // sb = reader.readLine();
                         // System.out.println(reader.readLine());
@@ -53,8 +36,62 @@ public class LightProxy {
 
                     System.out.println(sb.toString());
 
+                    //代理用户请求发往真正的服务端
                     Socket socket = new Socket(host,port);
-                    socket.getOutputStream().write(sb.toString().getBytes());
+
+
+                    byte[] bt = new byte[1024];
+                    int len = -1;
+                    boolean isFirstLine = true;
+                    int contentLength = -1;
+
+                    while ((len = inputStream.read(bt)) != -1){
+
+                        if(socket == null){
+
+                            if(isFirstLine){
+                                isFirstLine = false;
+                                String replace = replaceDomain(bt, len);
+    
+                                if(replace.startsWith("CONNECT")){
+                                    len = -1;
+                                    break;
+                                }
+                                sb.append(replace);
+                            }else {
+                                sb.append(new String(bt, 0, len));
+                            }
+
+                            // if(contentLength == -1){
+                            //     Integer length = (Integer) getHeader(new String(bt,0,len));
+                            //     if (length != null){
+                            //         contentLength = length;
+                            //     }
+                            //     int crlfcrlf = findCRLFCRLF(bt,len) + 4;
+                            //     contentLength -= ( len - crlfcrlf);
+                            // }
+
+                            if( contentLength == 0){
+                                break;
+                            }
+
+                            if( sb.toString().endsWith("\r\n\r\n")){
+                                break;
+                            }
+    
+                            System.out.println("Ready to get data");
+                        }else{
+                            if(isFirstLine){
+                                String replace = replaceDomain(bt, len);
+                                socket.getOutputStream().write(replace.getBytes());
+                            }else{
+                                socket.getOutputStream().write(bt, 0, len);
+                            }
+                        }
+
+                    }
+
+                    // socket.getOutputStream().write(sb.toString().getBytes());
 
                     Socket finalSocket = socket;
                     new Thread(()->{
@@ -67,9 +104,9 @@ public class LightProxy {
 
                             while((socketlen = socketInputStream.read(socketBt)) != -1){
 
-
                                 System.out.println(new String(socketBt, 0, socketlen));
                                 clientSocket.getOutputStream().write(socketBt, 0, socketlen);
+
                             }
                             socketInputStream.close();
                         } catch (Exception e) {
@@ -82,6 +119,7 @@ public class LightProxy {
                             }
                         }
                     }).start();
+
                 }catch(IOException e){
                     e.printStackTrace();
                 }
@@ -90,7 +128,8 @@ public class LightProxy {
 
     }
 
-    private  static String replaceDomain(String line) {
+    private  static String replaceDomain(byte[] bt, int len) {
+        String line = new String(bt, 0, len, StandardCharsets.UTF_8);
         String reqUrl = line.split("\\s+")[1];
 
         int endIndex = reqUrl.indexOf("/", 8);
