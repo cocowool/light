@@ -22,12 +22,20 @@ public class LightProxy {
                         // sb = reader.readLine();
                         // System.out.println(reader.readLine());
                         sb.append(reader.readLine());
+                        sb.append("\r\n");
                     }
 
 
+                    // System.out.println(sb.toString());
+                    String address = (String)getHeader(sb.toString())[0];
+                    String[] split = address.split(":");
+                    String host = split[0];
+                    int port = split.length > 1 ? Integer.parseInt(split[1]) : 80;
+
                     System.out.println(sb.toString());
-                    String address = (String)getHeader(sb.toString())[1];
-                    System.out.println(address);
+
+                    socket = new Socket(host,port);
+                    socket.getOutputStream().write(sb.toString().getBytes());
                 }catch(IOException e){
                     e.printStackTrace();
                 }
@@ -60,7 +68,7 @@ public class LightProxy {
         String[] line = str.split("\r\n");
         
         for (String l : line ){
-            System.out.println(l + "\n");
+            // System.out.println(l + "\n");
             if(l.startsWith(hostPrefix)){
                 host = l.substring(hostPrefix.length());
             }else if ( l.startsWith(contentLengthPrefix)) {
