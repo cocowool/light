@@ -34,8 +34,20 @@ public class LightProxy {
 
                     System.out.println(sb.toString());
 
-                    socket = new Socket(host,port);
+                    Socket socket = new Socket(host,port);
                     socket.getOutputStream().write(sb.toString().getBytes());
+
+                    Socket finalSocket = socket;
+                    new Thread(()->{
+                        try {
+                            InputStream socketInputStream = finalSocket.getInputStream();
+                            int socketlen = -1;
+                        } catch (Exception e) {
+                            // TODO: handle exception
+                        }finally{
+
+                        }
+                    }).start();
                 }catch(IOException e){
                     e.printStackTrace();
                 }
