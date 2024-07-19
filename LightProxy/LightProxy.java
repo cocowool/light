@@ -17,6 +17,25 @@ public class LightProxy {
                 try(InputStream inputStream = clientSocket.getInputStream() ){
                     BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
                     StringBuilder sb = new StringBuilder();
+                    byte[] bt = new byte[1024];
+                    int len = -1;
+                    boolean isFirstLine = true;
+                    int contentLength = -1;
+
+                    while ((len = inputStream.read(bt)) != -1){
+                        if(isFirstLine){
+                            isFirstLine = false;
+                            String replace = replaceDomain(bt, len);
+
+                            if(replace.startsWith("CONNECT")){
+                                len = -1;
+                                break;
+                            }
+                            sb.append(replace);
+                        }else {
+                            sb.append(new String(bt, 0, len));
+                        }
+                    }
 
                     while( reader.ready()){
                         // sb = reader.readLine();
@@ -44,16 +63,16 @@ public class LightProxy {
 
                             byte[] socketBt = new byte[1024];
                             int socketlen = -1;
-                            boolean isFirstLine = true;
-                            
+
 
                             while((socketlen = socketInputStream.read(socketBt)) != -1){
+
+
                                 System.out.println(new String(socketBt, 0, socketlen));
                                 clientSocket.getOutputStream().write(socketBt, 0, socketlen);
                             }
                             socketInputStream.close();
                         } catch (Exception e) {
-                            // TODO: handle exception
                             e.printStackTrace();
                         }finally{
                             try {
