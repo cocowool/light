@@ -35,6 +35,39 @@ public class LightProxy {
                         throw new IOException("Invalid socks5 request!");
                     }
 
+                    String host = "baidu.com";
+                    int port = 80;
+
+                    System.out.println("Connection to " + host + " : " + port);
+
+                    Socket sendServerSocket = new Socket(host, port);
+                    InputStream serverIn = sendServerSocket.getInputStream();
+                    OutputStream serverOut = sendServerSocket.getOutputStream();
+
+                    byte[] response = new byte[len];
+                    System.arraycopy(bt, 0, response, 0, len);
+                    response[1] = 0x00;
+                    outputStream.write(response);
+
+                    //开始转发客户端发来的请求
+                    new Thread(() -> {
+                        try {
+                            byte[] bt2 = new byte[1024];
+                            int len2;
+                            while((len2 = serverIn.read(bt2)) != -1){
+                                outputStream.write(bt2,0,len2);
+                            }                                
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }).start();
+
+                    byte[] bt3 = new byte[1024];
+                    int len3;
+                    while( (len3 = inputStream.read(bt3)) != -1){
+                        serverOut.write(bt3,0,len3);
+                    }
+
                     // BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
 
                     // StringBuilder sb = new StringBuilder();
