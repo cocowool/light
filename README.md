@@ -21,3 +21,4 @@ Which will support kafka / activemq as event / message channel.
 2. https://blog.csdn.net/m0_52861000/article/details/126901321
 3. https://cloud.tencent.com/developer/article/2359503
 4. https://blog.csdn.net/Nuan_Feng/article/details/118111762
+5. https://wenku.csdn.net/answer/9c45287da15142ff945eb8628a907524
