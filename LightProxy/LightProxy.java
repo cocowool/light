@@ -28,8 +28,9 @@ public class LightProxy {
                     }
 
                     OutputStream outputStream = accept.getOutputStream();
-                    outputStream.write(new byte[] { 0x50,0x00 });
+                    outputStream.write(new byte[] { 0x05,0x00 });
 
+                    len = inputStream.read(bt);
                     if( bt[0] != 0x05 || bt[1] != 0x01 || bt[2] != 0x00){
                         throw new IOException("Invalid socks5 request!");
                     }
