@@ -15,110 +15,125 @@ public class LightProxy {
 
             // new Thread( () -> handleRequest(clientSocket)).start();
             new Thread( () -> {
+
+                
                 // 接收客户端请求
                 try(InputStream inputStream = accept.getInputStream() ){
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
 
-                    StringBuilder sb = new StringBuilder();
-                    while( reader.ready()){
-                        // sb = reader.readLine();
-                        // System.out.println(reader.readLine());
-                        sb.append(reader.readLine());
-                        sb.append("\r\n");
+                    byte[] bt = new byte[1024];
+                    int len = inputStream.read(bt);
+                    // 判断是否是 SOCKS5 请求
+                    if( bt[0] != 0x05 ){
+                        throw new IOException("Invalid socks5 handshake request!");
                     }
+
+                    OutputStream outputStream = accept.getOutputStream();
+                    outputStream.write(new byte[] { 0x50,0x00 });
+
+                    if( bt[0] != 0x05 || bt[1] != 0x01 || bt[2] != 0x00){
+                        throw new IOException("Invalid socks5 request!");
+                    }
+
+                    // BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+
+                    // StringBuilder sb = new StringBuilder();
+                    // while( reader.ready()){
+                    //     // sb = reader.readLine();
+                    //     // System.out.println(reader.readLine());
+                    //     sb.append(reader.readLine());
+                    //     sb.append("\r\n");
+                    // }
 
 
                     // System.out.println(sb.toString());
-                    String address = (String)getHeader(sb.toString())[0];
-                    String[] split = address.split(":");
-                    String host = split[0];
-                    int port = split.length > 1 ? Integer.parseInt(split[1]) : 80;
+                    // String address = (String)getHeader(sb.toString())[0];
+                    // String[] split = address.split(":");
+                    // String host = split[0];
+                    // int port = split.length > 1 ? Integer.parseInt(split[1]) : 80;
 
-                    System.out.println(sb.toString());
+                    // System.out.println(sb.toString());
 
-                    //代理用户请求发往真正的服务端
-                    Socket socket = new Socket(host,port);
+                    // //代理用户请求发往真正的服务端
+                    // Socket socket = new Socket(host,port);
 
 
-                    byte[] bt = new byte[1024];
-                    int len = -1;
-                    boolean isFirstLine = true;
-                    int contentLength = -1;
+                    // boolean isFirstLine = true;
+                    // int contentLength = -1;
 
-                    while ((len = inputStream.read(bt)) != -1){
+                    // while ((len = inputStream.read(bt)) != -1){
 
-                        if(socket == null){
+                    //     if(socket == null){
 
-                            if(isFirstLine){
-                                isFirstLine = false;
-                                String replace = replaceDomain(bt, len);
+                    //         if(isFirstLine){
+                    //             isFirstLine = false;
+                    //             String replace = replaceDomain(bt, len);
     
-                                if(replace.startsWith("CONNECT")){
-                                    len = -1;
-                                    break;
-                                }
-                                sb.append(replace);
-                            }else {
-                                sb.append(new String(bt, 0, len));
-                            }
+                    //             if(replace.startsWith("CONNECT")){
+                    //                 len = -1;
+                    //                 break;
+                    //             }
+                    //             sb.append(replace);
+                    //         }else {
+                    //             sb.append(new String(bt, 0, len));
+                    //         }
 
-                            // if(contentLength == -1){
-                            //     Integer length = (Integer) getHeader(new String(bt,0,len));
-                            //     if (length != null){
-                            //         contentLength = length;
-                            //     }
-                            //     int crlfcrlf = findCRLFCRLF(bt,len) + 4;
-                            //     contentLength -= ( len - crlfcrlf);
-                            // }
+                    //         // if(contentLength == -1){
+                    //         //     Integer length = (Integer) getHeader(new String(bt,0,len));
+                    //         //     if (length != null){
+                    //         //         contentLength = length;
+                    //         //     }
+                    //         //     int crlfcrlf = findCRLFCRLF(bt,len) + 4;
+                    //         //     contentLength -= ( len - crlfcrlf);
+                    //         // }
 
-                            if( contentLength == 0){
-                                break;
-                            }
+                    //         if( contentLength == 0){
+                    //             break;
+                    //         }
 
-                            if( sb.toString().endsWith("\r\n\r\n")){
-                                break;
-                            }
+                    //         if( sb.toString().endsWith("\r\n\r\n")){
+                    //             break;
+                    //         }
     
-                            System.out.println("Ready to get data");
-                        }else{
-                            if(isFirstLine){
-                                String replace = replaceDomain(bt, len);
-                                socket.getOutputStream().write(replace.getBytes());
-                            }else{
-                                socket.getOutputStream().write(bt, 0, len);
-                            }
-                        }
+                    //         System.out.println("Ready to get data");
+                    //     }else{
+                    //         if(isFirstLine){
+                    //             String replace = replaceDomain(bt, len);
+                    //             socket.getOutputStream().write(replace.getBytes());
+                    //         }else{
+                    //             socket.getOutputStream().write(bt, 0, len);
+                    //         }
+                    //     }
 
-                    }
+                    // }
 
-                    // socket.getOutputStream().write(sb.toString().getBytes());
+                    // // socket.getOutputStream().write(sb.toString().getBytes());
 
-                    Socket finalSocket = socket;
-                    new Thread(()->{
-                        try {
-                            InputStream socketInputStream = finalSocket.getInputStream();
+                    // Socket finalSocket = socket;
+                    // new Thread(()->{
+                    //     try {
+                    //         InputStream socketInputStream = finalSocket.getInputStream();
 
-                            byte[] socketBt = new byte[1024];
-                            int socketlen = -1;
+                    //         byte[] socketBt = new byte[1024];
+                    //         int socketlen = -1;
 
 
-                            while((socketlen = socketInputStream.read(socketBt)) != -1){
+                    //         while((socketlen = socketInputStream.read(socketBt)) != -1){
 
-                                System.out.println(new String(socketBt, 0, socketlen));
-                                clientSocket.getOutputStream().write(socketBt, 0, socketlen);
+                    //             System.out.println(new String(socketBt, 0, socketlen));
+                    //             clientSocket.getOutputStream().write(socketBt, 0, socketlen);
 
-                            }
-                            socketInputStream.close();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }finally{
-                            try {
-                                finalSocket.close();
-                            }catch(IOException e){
-                                e.printStackTrace();
-                            }
-                        }
-                    }).start();
+                    //         }
+                    //         socketInputStream.close();
+                    //     } catch (Exception e) {
+                    //         e.printStackTrace();
+                    //     }finally{
+                    //         try {
+                    //             finalSocket.close();
+                    //         }catch(IOException e){
+                    //             e.printStackTrace();
+                    //         }
+                    //     }
+                    // }).start();
 
                 }catch(IOException e){
                     e.printStackTrace();
