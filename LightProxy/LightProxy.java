@@ -28,6 +28,8 @@ public class LightProxy {
                     }
 
                     OutputStream outputStream = accept.getOutputStream();
+                    // 向客户端请求返回确认为 SOCKS 协议，返回认证方式，0x00 表示不需要认证
+                    // 认证方式: 0x00 不需要认证，0x01 GSSAPI 认证，0x02 用户名和密码方式认证，0x03 IANA认证，0x80-0xfe 保留的认证方式，0xff 不支持任何认证方式，客户端收到后需关闭链接
                     outputStream.write(new byte[] { 0x05,0x00 });
 
                     len = inputStream.read(bt);
