@@ -6,6 +6,7 @@ public class LightProxy {
     private  static final int PORT = 8989;
 
     public static void main(String[] args) throws IOException{
+        //启动代理端的监听端口，接收用户的请求
         ServerSocket serverSocket = new ServerSocket(PORT);
         System.out.println("Server is listening on port " + PORT);
 
@@ -32,6 +33,7 @@ public class LightProxy {
                     // 认证方式: 0x00 不需要认证，0x01 GSSAPI 认证，0x02 用户名和密码方式认证，0x03 IANA认证，0x80-0xfe 保留的认证方式，0xff 不支持任何认证方式，客户端收到后需关闭链接
                     outputStream.write(new byte[] { 0x05,0x00 });
 
+                    //验证认证方式，目前仅支持不需要认证的类型
                     len = inputStream.read(bt);
                     if( bt[0] != 0x05 || bt[1] != 0x01 || bt[2] != 0x00){
                         throw new IOException("Invalid socks5 request!");
