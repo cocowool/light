@@ -4,14 +4,29 @@ import java.net.*;
 public class HttpProxyServer {
     public static void main(String[] args) throws IOException {
         int port = 8080; // HTTP 代理端口
-        ServerSocket serverSocket = new ServerSocket(port);
-        System.out.println("HTTP proxy server listening on port " + port);
+        try{
+            ServerSocket sst = new ServerSocket(port);
+            System.out.println("HTTP proxy server listening on port " + port);
 
-        while (true) {
-            Socket clientSocket = serverSocket.accept();
-            new Thread(new HttpHandler(clientSocket)).start();
+            while (true) {
+                Socket clientSocket = sst.accept();
+                // 设置客户端与代理服务器的未活动超时时间
+                clientSocket.setSoTimeout(1000*60);
+
+                String line = "";
+                InputStream inputStr = clientSocket.getInputStream();
+
+                
+
+                new Thread(new HttpHandler(clientSocket)).start();
+            }    
+    
+        }catch(IOException e){
+            e.printStackTrace();
         }
+
     }
+
 }
 
 class HttpHandler implements Runnable {
