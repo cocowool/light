@@ -2,6 +2,12 @@ import java.io.*;
 import java.net.*;
 
 public class HttpProxyServer {
+    private final int port;
+
+    public HttpProxyServer(int port) throws IOException{
+        this.port = port;
+    }
+
     public static void main(String[] args) throws IOException {
         int port = 8080; // HTTP 代理端口
         try{
@@ -16,7 +22,11 @@ public class HttpProxyServer {
                 String line = "";
                 InputStream inputStr = clientSocket.getInputStream();
 
-                
+                String tmpHost = "", host;
+                int port = 80;
+                String type = null;
+
+                OutputStream outStr = clientSocket.getOutputStream();
 
                 new Thread(new HttpHandler(clientSocket)).start();
             }    
