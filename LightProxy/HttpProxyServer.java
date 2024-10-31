@@ -20,6 +20,11 @@ public class HttpProxyServer {
 
                     InputStream inputStream = socket.getInputStream();
 
+                    OutputStream outputStream = socket.getOutputStream();
+                    BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
+
+                    StringBuilder strBuilder = new StringBuilder();
+
             }
 
         }catch(Exception e){
