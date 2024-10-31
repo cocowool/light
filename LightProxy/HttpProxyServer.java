@@ -51,6 +51,7 @@ public class HttpProxyServer {
                         }
 
                         if( line.isEmpty() ){
+                            strBuilder.append("\r\n");
                             break;
                         }
 
@@ -58,6 +59,8 @@ public class HttpProxyServer {
                         strBuilder.append(line + "\r\n");
                         line = null;
                     }
+
+                    System.out.println("Receive client request end . ");
 
             }
 
