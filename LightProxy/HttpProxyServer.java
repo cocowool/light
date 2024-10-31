@@ -27,6 +27,7 @@ public class HttpProxyServer {
                     String line = "";
                     int firstLine = 1;
                     String requestMethod = null;    //用于记录
+                    String requestHost = "";
 
                     //按行读取客户端发送的数据
                     while((line = br.readLine()) != null){
@@ -36,9 +37,26 @@ public class HttpProxyServer {
                         if( firstLine == 1){
                             requestMethod = line.split(" ")[0];
 
+                            System.out.println("Request method : " + requestMethod);
                             if( requestMethod == null)  continue;
                         }
                         firstLine++;
+
+                        // 提取出 Host 地址
+                        String[] strHost = line.split(": "); 
+                        for(int i = 0; i < strHost.length; i++){
+                            if(strHost[i].equalsIgnoreCase("host")){
+                                requestHost = strHost[i+1];
+                            }
+                        }
+
+                        if( line.isEmpty() ){
+                            break;
+                        }
+
+                        // 将收到的请求加上换行保存起来，留作后面使用
+                        strBuilder.append(line + "\r\n");
+                        line = null;
                     }
 
             }
