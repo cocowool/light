@@ -25,10 +25,20 @@ public class HttpProxyServer {
 
                     StringBuilder strBuilder = new StringBuilder();
                     String line = "";
+                    int firstLine = 1;
+                    String requestMethod = null;    //用于记录
 
                     //按行读取客户端发送的数据
                     while((line = br.readLine()) != null){
                         System.out.println("Client Send : " + line);
+
+                        //判断请求的首行
+                        if( firstLine == 1){
+                            requestMethod = line.split(" ")[0];
+
+                            if( requestMethod == null)  continue;
+                        }
+                        firstLine++;
                     }
 
             }
