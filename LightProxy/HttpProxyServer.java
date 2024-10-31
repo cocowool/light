@@ -24,6 +24,12 @@ public class HttpProxyServer {
                     BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
 
                     StringBuilder strBuilder = new StringBuilder();
+                    String line = "";
+
+                    //按行读取客户端发送的数据
+                    while((line = br.readLine()) != null){
+                        System.out.println("Client Send : " + line);
+                    }
 
             }
 
