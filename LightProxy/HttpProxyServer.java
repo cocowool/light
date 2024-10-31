@@ -28,6 +28,7 @@ public class HttpProxyServer {
                     int firstLine = 1;
                     String requestMethod = null;    //用于记录
                     String requestHost = "";
+                    int requestPort = 80;
 
                     //按行读取客户端发送的数据
                     while((line = br.readLine()) != null){
@@ -62,6 +63,9 @@ public class HttpProxyServer {
 
                     System.out.println("Receive client request end . ");
 
+                    if (requestHost.split(":").length > 1){
+
+                    }
             }
 
         }catch(Exception e){
