@@ -48,6 +48,7 @@ public class HttpProxyServer {
                         for(int i = 0; i < strHost.length; i++){
                             if(strHost[i].equalsIgnoreCase("host")){
                                 requestHost = strHost[i+1];
+                                System.out.println("Request host : " + requestHost);
                             }
                         }
 
@@ -64,7 +65,7 @@ public class HttpProxyServer {
                     System.out.println("Receive client request end . ");
 
                     if (requestHost.split(":").length > 1){
-
+                        requestPort = Integer.valueOf(requestHost.split(":")[1]);
                     }
             }
 
