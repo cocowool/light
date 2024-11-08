@@ -18,6 +18,7 @@ public class HttpProxyServer {
                     //设置服务端与客户端连接未活动超时时间
                     serverSocket.setSoTimeout(1000 * 60);
 
+                    // TODO: 后续增加新开启线程处理功能 
                     InputStream inputStream = socket.getInputStream();
 
                     OutputStream outputStream = socket.getOutputStream();
@@ -30,7 +31,7 @@ public class HttpProxyServer {
                     String requestHost = "";
                     int requestPort = 80;
 
-                    //按行读取客户端发送的数据
+                    // 按行读取客户端发送的数据
                     while((line = br.readLine()) != null){
                         System.out.println("Client Send : " + line);
 
@@ -67,6 +68,9 @@ public class HttpProxyServer {
                     if (requestHost.split(":").length > 1){
                         requestPort = Integer.valueOf(requestHost.split(":")[1]);
                     }
+
+                    requestSocket = new Socket(requestHost, requestPort);
+                    requestSocket.getOutputStream().write(line.toString().getBytes());
             }
 
         }catch(Exception e){
