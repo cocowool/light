@@ -69,8 +69,11 @@ public class HttpProxyServer {
                         requestPort = Integer.valueOf(requestHost.split(":")[1]);
                     }
 
-                    requestSocket = new Socket(requestHost, requestPort);
-                    requestSocket.getOutputStream().write(line.toString().getBytes());
+                    Socket proxySocket = new Socket(requestHost, requestPort);
+                    proxySocket.getOutputStream().write(line.toString().getBytes());
+
+                    InputStream proxyInputStream = proxySocket.getInputStream();
+                    
             }
 
         }catch(Exception e){
