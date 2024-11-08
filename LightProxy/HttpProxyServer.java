@@ -69,11 +69,20 @@ public class HttpProxyServer {
                         requestPort = Integer.valueOf(requestHost.split(":")[1]);
                     }
 
+                    System.out.println("Proxy Request send and receive.");
+                    System.out.println( "Request Host : " + requestHost);
+                    System.out.println( "Request Port : " + requestPort);
                     Socket proxySocket = new Socket(requestHost, requestPort);
                     proxySocket.getOutputStream().write(line.toString().getBytes());
 
                     InputStream proxyInputStream = proxySocket.getInputStream();
-                    
+                    byte[] socketBt = new byte[1024];
+                    int socketlen = -1;
+                    while( (socketlen = proxyInputStream.read(socketBt)) != -1 ){
+                        System.out.println("Proxy received : " + (new String(socketBt, 0, socketlen)));
+                        socket.getOutputStream().write(socketBt, 0, socketlen);
+                    }
+                    proxyInputStream.close();
             }
 
         }catch(Exception e){
