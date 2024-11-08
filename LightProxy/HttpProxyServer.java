@@ -38,31 +38,32 @@ public class HttpProxyServer {
             StringBuilder request = new StringBuilder();
             String line = "";
             String requestMethod = null;    //用于记录
+            String requestPath = "/";
+            String requestProtocol = "HTTP/1.1";
             String requestHost = "";
             int requestPort = 80;
             boolean headersEnd = false;
+            boolean hasBody = false;
+            long contentLength = -1;
 
             // 按行读取客户端发送的数据
             while((line = br.readLine()) != null){
                 System.out.println("Client Send : " + line);
+                request.append(line).append("\r\n");
 
                 if(!headersEnd){
-                    request.append(line).append("\r\n");
-                
-
                     //判断请求的首行
                     if( request.length() == 0){
                         String[] parts = line.split(" ");
-                        if(parts.length > 2){
+                        if(parts.length >= 2){
                             requestMethod = parts[0];
-                            String url = parts[1];
-                            if( url.startsWith("http://") || url.startsWith("https://") ){
-                                URL parsedUrl = new URL(url);
-                                requestHost = parsedUrl.getHost();
-                                requestPort = parsedUrl.getPort() != -1 ? parsedUrl.getPort() : (parsedUrl.getProtocol().equals("http")?80:443);
-
+                            if(parts.length > 2){
+                                requestPath = parts[1];
                             }else{
-                                //假设后续有 Host 头
+                                // No full URL, we'll rely on Host header
+                            }
+                            if (parts.length > 2 && parts[2].startsWith("HTTP/")) {
+                                requestProtocol = parts[2];
                             }
                         }
                     }else if(line.isEmpty()){
@@ -70,11 +71,19 @@ public class HttpProxyServer {
                     }else{
                         //解析其他头部
                         String[] headerParts = line.split(": ");
-                        if( headerParts.length == 2 && headerParts[0].equalsIgnoreCase("Host") ){
-                            String[] hostParts = headerParts[1].split(":");
-                            requestHost = hostParts[0];
-                            if( hostParts.length > 1){
-                                requestPort = Integer.parseInt(hostParts[1]);
+                        if (headerParts.length == 2) {
+                            switch (headerParts[0].toLowerCase()) {
+                                case "host":
+                                    String[] hostParts = headerParts[1].split(":");
+                                    requestHost = hostParts[0];
+                                    if (hostParts.length > 1) {
+                                        requestPort = Integer.parseInt(hostParts[1]);
+                                    }
+                                    break;
+                                case "content-length":
+                                    contentLength = Long.parseLong(headerParts[1]);
+                                    hasBody = contentLength > 0;
+                                    break;
                             }
                         }
                     }
@@ -87,14 +96,29 @@ public class HttpProxyServer {
                 InputStream proxyInput = proxySocket.getInputStream();
                 OutputStream proxyOutput = proxySocket.getOutputStream();
             ){
-                //请求转发到目标服务器
+                System.out.println("Send Request .... ");
+                String proxyRequestLine = requestMethod + " " + requestPath + " " + requestProtocol + "\r\n";
+                proxyOutput.write(proxyRequestLine.getBytes());
+
+                // Forward headers
                 proxyOutput.write(request.toString().getBytes());
 
-                //转发响应回客户端
+                // Forward request body if present
+                if (hasBody) {
+                    byte[] bodyBuffer = new byte[(int) contentLength];
+                    int bytesRead = inputStream.read(bodyBuffer);
+                    if (bytesRead == contentLength) {
+                        proxyOutput.write(bodyBuffer);
+                    } else {
+                        // Handle error or incomplete read
+                    }
+                }
+
+                // Forward response from proxy to client
                 byte[] buffer = new byte[4096];
-                int bytesRead;
-                while ((bytesRead = proxyInput.read(buffer)) != -1) {
-                    outputStream.write(buffer, 0, bytesRead);
+                int responseBytesRead;
+                while ((responseBytesRead = proxyInput.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, responseBytesRead);
                 }
             }
         }catch(IOException e){
