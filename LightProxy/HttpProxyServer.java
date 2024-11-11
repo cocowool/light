@@ -47,12 +47,11 @@ public class HttpProxyServer {
             long contentLength = -1;
 
             // 按行读取客户端发送的数据
-            byte[] socketBt = new byte[1024];
-            int socketlen = -1;
-            while(( socketlen = inputStream.read(socketBt)) != -1 ){
+            while(( line = br.readLine()) != null ){
                 System.out.println("Client Send : " + line);
                 request.append(line).append("\r\n");
 
+                System.out.println("headersEnd = " + headersEnd);
                 if(!headersEnd){
                     //判断请求的首行
                     if( request.length() == 0){
@@ -69,6 +68,7 @@ public class HttpProxyServer {
                             }
                         }
                     }else if(line.isEmpty()){
+                        System.out.println("Header is end .");
                         headersEnd = true;
                     }else{
                         //解析其他头部
@@ -89,12 +89,15 @@ public class HttpProxyServer {
                             }
                         }
                     }
+                }else{
+                    System.out.println("Break while .");
+                    break;
                 }
 
                 System.out.println("Next Line ...");
             }
             
-
+            
             try(
                 Socket proxySocket = new Socket(requestHost, requestPort);
                 InputStream proxyInput = proxySocket.getInputStream();
