@@ -47,7 +47,9 @@ public class HttpProxyServer {
             long contentLength = -1;
 
             // 按行读取客户端发送的数据
-            while((line = br.readLine()) != null){
+            byte[] socketBt = new byte[1024];
+            int socketlen = -1;
+            while(( socketlen = inputStream.read(socketBt)) != -1 ){
                 System.out.println("Client Send : " + line);
                 request.append(line).append("\r\n");
 
