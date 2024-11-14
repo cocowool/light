@@ -49,13 +49,13 @@ public class HttpProxyServer {
             // 按行读取客户端发送的数据
             while(( line = br.readLine()) != null ){
                 System.out.println("Client Send : " + line);
-                request.append(line).append("\r\n");
 
                 System.out.println("headersEnd = " + headersEnd);
                 if(!headersEnd){
                     //判断请求的首行
                     if( request.length() == 0){
-                        String[] parts = line.split(" ");
+                        System.out.println(line);
+                        String[] parts = line.split(" ");                        
                         if(parts.length >= 2){
                             requestMethod = parts[0];
                             if(parts.length > 2){
@@ -95,6 +95,8 @@ public class HttpProxyServer {
                 }
 
                 System.out.println("Next Line ...");
+                request.append(line).append("\r\n");
+
             }
             
 
