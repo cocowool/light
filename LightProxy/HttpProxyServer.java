@@ -2,6 +2,10 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+/**
+ * 
+ * 2024-11-14 对于telnet发起的简单http请求能够正常返回，不支持 postman 请求
+ */
 public class HttpProxyServer {
     public static void main(String[] args) {
         int port = 8080; // HTTP 代理端口
@@ -70,6 +74,8 @@ public class HttpProxyServer {
                     }else if(line.isEmpty()){
                         System.out.println("Header is end .");
                         headersEnd = true;
+                        request.append(line).append("\r\n");
+                        break;
                     }else{
                         //解析其他头部
                         String[] headerParts = line.split(": ");
@@ -96,7 +102,7 @@ public class HttpProxyServer {
 
                 System.out.println("Next Line ...");
                 request.append(line).append("\r\n");
-
+                System.out.println("Current request : " + request);
             }
             
 
