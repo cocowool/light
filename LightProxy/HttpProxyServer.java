@@ -97,14 +97,16 @@ public class HttpProxyServer {
                 System.out.println("Next Line ...");
             }
             
-            
+
             try(
                 Socket proxySocket = new Socket(requestHost, requestPort);
                 InputStream proxyInput = proxySocket.getInputStream();
                 OutputStream proxyOutput = proxySocket.getOutputStream();
             ){
-                System.out.println("Send Request .... ");
                 String proxyRequestLine = requestMethod + " " + requestPath + " " + requestProtocol + "\r\n";
+                System.out.println("Send Request .... ");
+                System.out.println(proxyRequestLine);
+
                 proxyOutput.write(proxyRequestLine.getBytes());
 
                 // Forward headers
