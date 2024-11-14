@@ -5,6 +5,9 @@ import java.util.*;
 /**
  * 
  * 2024-11-14 对于telnet发起的简单http请求能够正常返回，不支持 postman 请求
+ * 
+ * 问题：
+ * 1. 不能持续响应一个客户端的连续请求
  */
 public class HttpProxyServer {
     public static void main(String[] args) {
@@ -137,7 +140,12 @@ public class HttpProxyServer {
                 while ((responseBytesRead = proxyInput.read(buffer)) != -1) {
                     outputStream.write(buffer, 0, responseBytesRead);
                 }
+
+                //处理后关闭相关的流
+                proxySocket.close();
             }
+
+            clientSocket.close();
         }catch(IOException e){
             e.printStackTrace();
         }
