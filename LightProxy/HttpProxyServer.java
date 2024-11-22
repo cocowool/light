@@ -117,7 +117,7 @@ public class HttpProxyServer {
             ){
                 String proxyRequestLine = requestMethod + " " + requestPath + " " + requestProtocol + "\r\n";
                 System.out.println("Send Request .... ");
-                System.out.println(proxyRequestLine);
+                // System.out.println(proxyRequestLine);
 
                 proxyOutput.write(proxyRequestLine.getBytes());
 
@@ -143,10 +143,11 @@ public class HttpProxyServer {
                 }
 
                 //处理后关闭相关的流
-                // proxySocket.close();
+                proxySocket.close();
             }
 
-            // clientSocket.close();
+            clientSocket.close();
+            return;
         }catch(IOException e){
             e.printStackTrace();
         }
