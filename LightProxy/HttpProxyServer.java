@@ -140,13 +140,17 @@ public class HttpProxyServer {
                 int responseBytesRead;
                 while ((responseBytesRead = proxyInput.read(buffer)) != -1) {
                     outputStream.write(buffer, 0, responseBytesRead);
+                    outputStream.flush();
+                    System.out.println("output to client.");
                 }
 
                 //处理后关闭相关的流
                 proxySocket.close();
+                System.out.println("proxySocket Closed.");
             }
 
             clientSocket.close();
+            System.out.println("clientSocket Closed .");
             return;
         }catch(IOException e){
             e.printStackTrace();
