@@ -5,7 +5,7 @@ import java.util.*;
 /**
  * 
  * 2024-11-14 对于telnet发起的简单http请求能够正常返回，不支持 postman 请求
- * 
+ * 2024-11-22 已支持 Postman 发 http 请求，不能正常响应重复请求
  * 问题：
  * 1. 不能持续响应一个客户端的连续请求
  */
@@ -24,6 +24,7 @@ public class HttpProxyServer {
                 try {
                     Socket socket = serverSocket.accept();
                     // 新开启线程处理用户端发来的请求
+                    System.out.println("New Thread !");
                     new Thread( () -> handleClient(socket) ).start();
                 }catch(IOException e){
                     e.printStackTrace();
@@ -57,7 +58,7 @@ public class HttpProxyServer {
             while(( line = br.readLine()) != null ){
                 System.out.println("Client Send : " + line);
 
-                System.out.println("headersEnd = " + headersEnd);
+                // System.out.println("headersEnd = " + headersEnd);
                 if(!headersEnd){
                     //判断请求的首行
                     if( request.length() == 0){
@@ -103,9 +104,9 @@ public class HttpProxyServer {
                     break;
                 }
 
-                System.out.println("Next Line ...");
                 request.append(line).append("\r\n");
-                System.out.println("Current request : " + request);
+                // System.out.println("Next Line ...");
+                // System.out.println("Current request : " + request);
             }
             
 
@@ -142,10 +143,10 @@ public class HttpProxyServer {
                 }
 
                 //处理后关闭相关的流
-                proxySocket.close();
+                // proxySocket.close();
             }
 
-            clientSocket.close();
+            // clientSocket.close();
         }catch(IOException e){
             e.printStackTrace();
         }
