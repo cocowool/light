@@ -144,11 +144,15 @@ public class HttpProxyServer {
                     System.out.println("output to client.");
                 }
 
+                proxyInput.close();
+                proxyOutput.close();
                 //处理后关闭相关的流
                 proxySocket.close();
                 System.out.println("proxySocket Closed.");
             }
 
+            inputStream.close();
+            outputStream.close();
             clientSocket.close();
             System.out.println("clientSocket Closed .");
             return;
