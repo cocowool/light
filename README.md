@@ -28,3 +28,4 @@ Which will support kafka / activemq as event / message channel.
 * https://blog.csdn.net/kevingzy/article/details/127808550
 * https://wiyi.org/socks5-implementation.html
 * https://www.cnblogs.com/muphy/p/14210917.html
+* [参考代码](https://github.com/mitre/HTTP-Proxy-Servlet)
