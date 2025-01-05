@@ -149,6 +149,8 @@ public class HttpProxyServer {
                 //处理后关闭相关的流
                 proxySocket.close();
                 System.out.println("proxySocket Closed.");
+            }catch(IOException e){
+                System.out.println("The destination host can not reached! Please check host and port.");
             }
 
             inputStream.close();
