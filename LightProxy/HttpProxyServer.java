@@ -1,51 +1,56 @@
 import java.io.*;
 import java.net.*;
-import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * 
  * 2024-11-14 对于telnet发起的简单http请求能够正常返回，不支持 postman 请求
  * 2024-11-22 已支持 Postman 发 http 请求，不能正常响应重复请求
+ * 
+ * @TODO 后续考虑使用 HttpClient 库
+ * 
  * 问题：
  * 1. 不能持续响应一个客户端的连续请求
+ * 
  */
 public class HttpProxyServer {
+    private static final int THREAD_POOL_SIZE = 10;
+    private static final ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+
     public static void main(String[] args) {
-        int port = 8080; // HTTP 代理端口
+        int port = 8080; // HTTP代理端口
 
         //@TODO 解析用户自定义的端口参数
 
         try ( ServerSocket serverSocket = new ServerSocket(port) ) {
             //设置服务端与客户端连接未活动超时时间
             serverSocket.setSoTimeout(1000 * 60);
-            System.out.println("Http Proxy Server listen at : " + port);
+            System.out.println("Http Proxy Server listen at: " + port);
 
             while (true) {
                 try {
                     Socket socket = serverSocket.accept();
-                    // 新开启线程处理用户端发来的请求
                     System.out.println("New Thread !");
-                    new Thread( () -> handleClient(socket) ).start();
-                }catch(IOException e){
+                    executorService.submit(() -> handleClient(socket));
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
-
-        }catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private static void handleClient(Socket clientSocket){
-        try(
-            InputStream inputStream = clientSocket.getInputStream();
-            OutputStream outputStream = clientSocket.getOutputStream();
+    private static void handleClient(Socket clientSocket) {
+        try (
+            InputStream inputStream = new BufferedInputStream(clientSocket.getInputStream());
+            OutputStream outputStream = new BufferedOutputStream(clientSocket.getOutputStream());
             BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
             PrintWriter writer = new PrintWriter(outputStream, true)
-        ){
+        ) {
             StringBuilder request = new StringBuilder();
-            String line = "";
-            String requestMethod = null;    //用于记录
+            String line;
+            String requestMethod = null;
             String requestPath = "/";
             String requestProtocol = "HTTP/1.1";
             String requestHost = "";
@@ -54,9 +59,8 @@ public class HttpProxyServer {
             boolean hasBody = false;
             long contentLength = -1;
 
-            // 按行读取客户端发送的数据
-            while(( line = br.readLine()) != null ){
-                System.out.println("Client Send : " + line);
+            while ((line = br.readLine()) != null) {
+                System.out.println("Client Send: " + line);
 
                 // System.out.println("headersEnd = " + headersEnd);
                 if(!headersEnd){
@@ -66,9 +70,9 @@ public class HttpProxyServer {
                         String[] parts = line.split(" ");                        
                         if(parts.length >= 2){
                             requestMethod = parts[0];
-                            if(parts.length > 2){
+                            if (parts.length > 2) {
                                 requestPath = parts[1];
-                            }else{
+                            } else {
                                 // No full URL, we'll rely on Host header
                             }
                             if (parts.length > 2 && parts[2].startsWith("HTTP/")) {
@@ -76,7 +80,7 @@ public class HttpProxyServer {
                             }
                         }
                     }else if(line.isEmpty()){
-                        System.out.println("Header is end .");
+                        System.out.println("Headers End!");
                         headersEnd = true;
                         request.append(line).append("\r\n");
                         break;
@@ -99,22 +103,18 @@ public class HttpProxyServer {
                             }
                         }
                     }
-                }else{
-                    System.out.println("Break while .");
-                    break;
                 }
 
                 request.append(line).append("\r\n");
                 // System.out.println("Next Line ...");
                 // System.out.println("Current request : " + request);
             }
-            
 
-            try(
+            try (
                 Socket proxySocket = new Socket(requestHost, requestPort);
-                InputStream proxyInput = proxySocket.getInputStream();
-                OutputStream proxyOutput = proxySocket.getOutputStream();
-            ){
+                InputStream proxyInput = new BufferedInputStream(proxySocket.getInputStream());
+                OutputStream proxyOutput = new BufferedOutputStream(proxySocket.getOutputStream());
+            ) {
                 String proxyRequestLine = requestMethod + " " + requestPath + " " + requestProtocol + "\r\n";
                 System.out.println("Send Request .... ");
                 // System.out.println(proxyRequestLine);
@@ -160,6 +160,13 @@ public class HttpProxyServer {
             return;
         }catch(IOException e){
             e.printStackTrace();
+        } finally {
+            try {
+                clientSocket.close();
+                System.out.println("clientSocket Closed .");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
