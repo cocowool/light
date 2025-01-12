@@ -21,7 +21,6 @@ public class HttpProxyServer {
         int port = 8080; // HTTP代理端口
 
         //@TODO 解析用户自定义的端口参数
-
         try ( ServerSocket serverSocket = new ServerSocket(port) ) {
             //设置服务端与客户端连接未活动超时时间
             serverSocket.setSoTimeout(1000 * 60);
@@ -117,7 +116,7 @@ public class HttpProxyServer {
             ) {
                 String proxyRequestLine = requestMethod + " " + requestPath + " " + requestProtocol + "\r\n";
                 System.out.println("Send Request .... ");
-                // System.out.println(proxyRequestLine);
+                System.out.println(proxyRequestLine);
 
                 proxyOutput.write(proxyRequestLine.getBytes());
 
@@ -127,8 +126,16 @@ public class HttpProxyServer {
                 // Forward request body if present
                 if (hasBody) {
                     byte[] bodyBuffer = new byte[(int) contentLength];
-                    int bytesRead = inputStream.read(bodyBuffer);
-                    if (bytesRead == contentLength) {
+                    int totalBytesRead = 0;
+                    while (totalBytesRead < contentLength) {
+                        int bytesRead = inputStream.read(bodyBuffer, totalBytesRead, (int) contentLength - totalBytesRead);
+                        if (bytesRead == -1) {
+                            // Handle error or incomplete read
+                            break;
+                        }
+                        totalBytesRead += bytesRead;
+                    }
+                    if (totalBytesRead == contentLength) {
                         proxyOutput.write(bodyBuffer);
                     } else {
                         // Handle error or incomplete read
