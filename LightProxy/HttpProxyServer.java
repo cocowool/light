@@ -115,6 +115,9 @@ public class HttpProxyServer {
                 OutputStream proxyOutput = new BufferedOutputStream(proxySocket.getOutputStream());
             ) {
                 String proxyRequestLine = requestMethod + " " + requestPath + " " + requestProtocol + "\r\n";
+                // 补充请求的主机
+                proxyRequestLine += "Host: " + requestHost + ":" + requestPort + "\r\n";
+
                 System.out.println("Send Request .... ");
                 System.out.println(proxyRequestLine);
 
@@ -135,6 +138,7 @@ public class HttpProxyServer {
                         }
                         totalBytesRead += bytesRead;
                     }
+                    
                     if (totalBytesRead == contentLength) {
                         proxyOutput.write(bodyBuffer);
                     } else {
