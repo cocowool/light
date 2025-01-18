@@ -129,10 +129,11 @@ public class HttpProxyServer {
                 proxyOutput.write(proxyRequestLine.getBytes());
 
                 // Forward headers
-                proxyOutput.write(request.toString().getBytes());
+                // proxyOutput.write(request.toString().getBytes());
 
                 // Forward request body if present
                 if (hasBody) {
+                    System.out.println("Body needs to send.");
                     byte[] bodyBuffer = new byte[(int) contentLength];
                     int totalBytesRead = 0;
                     while (totalBytesRead < contentLength) {
@@ -155,6 +156,7 @@ public class HttpProxyServer {
                 byte[] buffer = new byte[4096];
                 int responseBytesRead;
                 while ((responseBytesRead = proxyInput.read(buffer)) != -1) {
+                    System.out.println("Wait response....");
                     outputStream.write(buffer, 0, responseBytesRead);
                     outputStream.flush();
                     System.out.println("output to client.");
