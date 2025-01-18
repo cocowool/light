@@ -7,7 +7,7 @@ import java.util.concurrent.*;
  * 2024-11-14 对于telnet发起的简单http请求能够正常返回，不支持 postman 请求
  * 2024-11-22 已支持 Postman 发 http 请求，不能正常响应重复请求
  * 
- * @TODO 后续考虑使用 HttpClient 库
+ * @TODO 后续考虑使用 HttpClient 库 / 或者使用 Netty 
  * 
  * 问题：
  * 1. 不能持续响应一个客户端的连续请求
@@ -116,7 +116,12 @@ public class HttpProxyServer {
             ) {
                 String proxyRequestLine = requestMethod + " " + requestPath + " " + requestProtocol + "\r\n";
                 // 补充请求的主机
-                proxyRequestLine += "Host: " + requestHost + ":" + requestPort + "\r\n";
+                if( requestPort != 80){
+                    proxyRequestLine += "Host: " + requestHost + ":" + requestPort + "\r\n";
+                }else{
+                    proxyRequestLine += "Host: " + requestHost + "\r\n";
+                }
+                proxyRequestLine += "\r\n";
 
                 System.out.println("Send Request .... ");
                 System.out.println(proxyRequestLine);
