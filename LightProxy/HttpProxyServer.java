@@ -20,7 +20,7 @@ public class HttpProxyServer {
     public static void main(String[] args) {
         int port = 8080; // HTTP代理端口
 
-        //@TODO 解析用户自定义的端口参数
+        // @TODO 解析用户自定义的端口参数
         try ( ServerSocket serverSocket = new ServerSocket(port) ) {
             //设置服务端与客户端连接未活动超时时间
             serverSocket.setSoTimeout(1000 * 60);
@@ -38,6 +38,92 @@ public class HttpProxyServer {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        // try {
+        //     Run_Server("127.0.0.1", port);
+        // }catch(Exception e){
+        //     System.err.println(e);
+        // }
+    }
+
+    public static void Run_Server(ServerSocket Server_Socket, String Proxy_Host, int Local_Port) throws IOException {
+        int Remote_Port = 80;
+        // Create a ServerSocket to listen connections
+        // ServerSocket Server_Socket = new ServerSocket(Local_Port);
+        final byte[] Request = new byte[1024];
+        byte[] Reply = new byte[4096];
+        while (true) {
+            Socket Socket_Client = null, Socket_Server = null;
+            try {
+            // wait for a connection on the local port
+            Socket_Client = Server_Socket.accept();
+            final InputStream InputStreamClient = Socket_Client.getInputStream();
+            final OutputStream OutputStreamClient = Socket_Client.getOutputStream();
+
+            // Create the connection to the real server.
+            try {
+                Socket_Server = new Socket(Proxy_Host, Remote_Port);
+            } catch (IOException e) {
+                PrintWriter out = new PrintWriter(OutputStreamClient);
+                out.print("The Proxy Server could not connect to " + Proxy_Host + ":" + Remote_Port
+                    + ":\n" + e + "\n");
+                out.flush();
+                Socket_Client.close();
+                continue;
+            }
+
+            final InputStream InputStreamServer = Socket_Server.getInputStream();
+            final OutputStream OutputStreamServer = Socket_Server.getOutputStream();
+
+            // The thread to read the client's requests and to pass them
+            Thread New_Thread = new Thread() {
+                public void run() {
+                int Bytes_Read;
+                try {
+                    while ((Bytes_Read = InputStreamClient.read(Request)) != -1) {
+                    OutputStreamServer.write(Request, 0, Bytes_Read);
+                    OutputStreamServer.flush();
+                    }
+                } catch (IOException e) {
+                }
+
+                // Close the connections
+                try {
+                    OutputStreamServer.close();
+                } catch (IOException e) {
+                }
+                }
+            };
+
+            // client-to-server request thread
+            New_Thread.start();
+            // Read server's responses and pass them to the client.
+            int Bytes_Read;
+            try {
+                while ((Bytes_Read = InputStreamServer.read(Reply)) != -1) {
+                OutputStreamClient.write(Reply, 0, Bytes_Read);
+                OutputStreamClient.flush();
+                }
+            } catch (IOException e) {
+            }
+            // Close the connection
+            OutputStreamClient.close();
+            } catch (IOException e) {
+            System.err.println(e);
+            } finally {
+            try {
+                if (Socket_Server != null)
+                Socket_Server.close();
+                if (Socket_Client != null)
+                Socket_Client.close();
+            } catch (IOException e) {
+            }
+            }
+        }
+    }
+
+    private static void handleRequest(Socket socket, String request) {
+        // 处理请求并返回响应
+        // ...
     }
 
     private static void handleClient(Socket clientSocket) {
@@ -109,73 +195,75 @@ public class HttpProxyServer {
                 // System.out.println("Current request : " + request);
             }
 
-            try (
-                Socket proxySocket = new Socket(requestHost, requestPort);
-                InputStream proxyInput = new BufferedInputStream(proxySocket.getInputStream());
-                OutputStream proxyOutput = new BufferedOutputStream(proxySocket.getOutputStream());
-            ) {
-                String proxyRequestLine = requestMethod + " " + requestPath + " " + requestProtocol + "\r\n";
-                // 补充请求的主机
-                if( requestPort != 80){
-                    proxyRequestLine += "Host: " + requestHost + ":" + requestPort + "\r\n";
-                }else{
-                    proxyRequestLine += "Host: " + requestHost + "\r\n";
-                }
-                proxyRequestLine += "\r\n";
+            Run_Server(clientSocket, requestHost, 80);
 
-                System.out.println("Send Request .... ");
-                System.out.println(proxyRequestLine);
+            // try (
+            //     Socket proxySocket = new Socket(requestHost, requestPort);
+            //     InputStream proxyInput = new BufferedInputStream(proxySocket.getInputStream());
+            //     OutputStream proxyOutput = new BufferedOutputStream(proxySocket.getOutputStream());
+            // ) {
+            //     String proxyRequestLine = requestMethod + " " + requestPath + " " + requestProtocol + "\r\n";
+            //     // 补充请求的主机
+            //     if( requestPort != 80){
+            //         proxyRequestLine += "Host: " + requestHost + ":" + requestPort + "\r\n";
+            //     }else{
+            //         proxyRequestLine += "Host: " + requestHost + "\r\n";
+            //     }
+            //     proxyRequestLine += "\r\n";
 
-                proxyOutput.write(proxyRequestLine.getBytes());
+            //     System.out.println("Send Request .... ");
+            //     System.out.println(proxyRequestLine);
 
-                // Forward headers
-                // proxyOutput.write(request.toString().getBytes());
+            //     proxyOutput.write(proxyRequestLine.getBytes());
 
-                // Forward request body if present
-                if (hasBody) {
-                    System.out.println("Body needs to send.");
-                    byte[] bodyBuffer = new byte[(int) contentLength];
-                    int totalBytesRead = 0;
-                    while (totalBytesRead < contentLength) {
-                        int bytesRead = inputStream.read(bodyBuffer, totalBytesRead, (int) contentLength - totalBytesRead);
-                        if (bytesRead == -1) {
-                            // Handle error or incomplete read
-                            break;
-                        }
-                        totalBytesRead += bytesRead;
-                    }
+            //     // Forward headers
+            //     // proxyOutput.write(request.toString().getBytes());
+
+            //     // Forward request body if present
+            //     if (hasBody) {
+            //         System.out.println("Body needs to send.");
+            //         byte[] bodyBuffer = new byte[(int) contentLength];
+            //         int totalBytesRead = 0;
+            //         while (totalBytesRead < contentLength) {
+            //             int bytesRead = inputStream.read(bodyBuffer, totalBytesRead, (int) contentLength - totalBytesRead);
+            //             if (bytesRead == -1) {
+            //                 // Handle error or incomplete read
+            //                 break;
+            //             }
+            //             totalBytesRead += bytesRead;
+            //         }
                     
-                    if (totalBytesRead == contentLength) {
-                        proxyOutput.write(bodyBuffer);
-                    } else {
-                        // Handle error or incomplete read
-                    }
-                }
+            //         if (totalBytesRead == contentLength) {
+            //             proxyOutput.write(bodyBuffer);
+            //         } else {
+            //             // Handle error or incomplete read
+            //         }
+            //     }
 
-                // Forward response from proxy to client
-                byte[] buffer = new byte[4096];
-                int responseBytesRead;
-                while ((responseBytesRead = proxyInput.read(buffer)) != -1) {
-                    System.out.println("Wait response....");
-                    outputStream.write(buffer, 0, responseBytesRead);
-                    outputStream.flush();
-                    System.out.println("output to client.");
-                }
+            //     // Forward response from proxy to client
+            //     byte[] buffer = new byte[4096];
+            //     int responseBytesRead;
+            //     while ((responseBytesRead = proxyInput.read(buffer)) != -1) {
+            //         System.out.println("Wait response....");
+            //         outputStream.write(buffer, 0, responseBytesRead);
+            //         outputStream.flush();
+            //         System.out.println("output to client.");
+            //     }
 
-                proxyInput.close();
-                proxyOutput.close();
-                //处理后关闭相关的流
-                proxySocket.close();
-                System.out.println("proxySocket Closed.");
-            }catch(IOException e){
-                System.out.println("The destination host can not reached! Please check host and port.");
-            }
+            //     proxyInput.close();
+            //     proxyOutput.close();
+            //     //处理后关闭相关的流
+            //     proxySocket.close();
+            //     System.out.println("proxySocket Closed.");
+            // }catch(IOException e){
+            //     System.out.println("The destination host can not reached! Please check host and port.");
+            // }
 
-            inputStream.close();
-            outputStream.close();
-            clientSocket.close();
-            System.out.println("clientSocket Closed .");
-            return;
+            // inputStream.close();
+            // outputStream.close();
+            // clientSocket.close();
+            // System.out.println("clientSocket Closed .");
+            // return;
         }catch(IOException e){
             e.printStackTrace();
         } finally {
