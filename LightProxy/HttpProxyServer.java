@@ -29,8 +29,14 @@ public class HttpProxyServer {
             while (true) {
                 try {
                     Socket socket = serverSocket.accept();
-                    System.out.println("New Thread !");
-                    executorService.submit(() -> handleClient(socket));
+
+                    final InputStream InputStreamClient = socket.getInputStream();
+                    final OutputStream OutputStreamClient = socket.getOutputStream();
+
+                    
+
+                    // System.out.println("New Thread !");
+                    // executorService.submit(() -> handleClient(socket));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
