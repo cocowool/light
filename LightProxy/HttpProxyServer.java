@@ -45,17 +45,18 @@ public class HttpProxyServer {
         // }
     }
 
-    public static void Run_Server(ServerSocket Server_Socket, String Proxy_Host, int Local_Port) throws IOException {
+    public static void Run_Server(ServerSocket Socket_Client, String Proxy_Host, int Local_Port) throws IOException {
         int Remote_Port = 80;
         // Create a ServerSocket to listen connections
         // ServerSocket Server_Socket = new ServerSocket(Local_Port);
         final byte[] Request = new byte[1024];
         byte[] Reply = new byte[4096];
         while (true) {
-            Socket Socket_Client = null, Socket_Server = null;
+            // Socket Socket_Client = null;
+            Socket Socket_Server = null;
             try {
             // wait for a connection on the local port
-            Socket_Client = Server_Socket.accept();
+            // Socket_Client = Server_Socket.accept(); // 从入参中获得对象
             final InputStream InputStreamClient = Socket_Client.getInputStream();
             final OutputStream OutputStreamClient = Socket_Client.getOutputStream();
 
