@@ -61,57 +61,57 @@ public class HttpProxyServer {
             // Socket Socket_Client = null;
             Socket Socket_Server = null;
             try {
-            // wait for a connection on the local port
-            // Socket_Client = Server_Socket.accept(); // 从入参中获得对象
-            final InputStream InputStreamClient = Socket_Client.getInputStream();
-            final OutputStream OutputStreamClient = Socket_Client.getOutputStream();
+                // wait for a connection on the local port
+                // Socket_Client = Server_Socket.accept(); // 从入参中获得对象
+                final InputStream InputStreamClient = Socket_Client.getInputStream();
+                final OutputStream OutputStreamClient = Socket_Client.getOutputStream();
 
-            // Create the connection to the real server.
-            try {
-                Socket_Server = new Socket(Proxy_Host, Remote_Port);
-            } catch (IOException e) {
-                PrintWriter out = new PrintWriter(OutputStreamClient);
-                out.print("The Proxy Server could not connect to " + Proxy_Host + ":" + Remote_Port
-                    + ":\n" + e + "\n");
-                out.flush();
-                Socket_Client.close();
-                continue;
-            }
+                // Create the connection to the real server.
+                try {
+                    Socket_Server = new Socket(Proxy_Host, Remote_Port);
+                } catch (IOException e) {
+                    PrintWriter out = new PrintWriter(OutputStreamClient);
+                    out.print("The Proxy Server could not connect to " + Proxy_Host + ":" + Remote_Port
+                        + ":\n" + e + "\n");
+                    out.flush();
+                    Socket_Client.close();
+                    continue;
+                }
 
-            final InputStream InputStreamServer = Socket_Server.getInputStream();
-            final OutputStream OutputStreamServer = Socket_Server.getOutputStream();
+                final InputStream InputStreamServer = Socket_Server.getInputStream();
+                final OutputStream OutputStreamServer = Socket_Server.getOutputStream();
 
-            // The thread to read the client's requests and to pass them
-            Thread New_Thread = new Thread() {
-                public void run() {
-                    int Bytes_Read;
-                    try {
-                        while ((Bytes_Read = InputStreamClient.read(Request)) != -1) {
-                            OutputStreamServer.write(Request, 0, Bytes_Read);
-                            OutputStreamServer.flush();
+                // The thread to read the client's requests and to pass them
+                Thread New_Thread = new Thread() {
+                    public void run() {
+                        int Bytes_Read;
+                        try {
+                            while ((Bytes_Read = InputStreamClient.read(Request)) != -1) {
+                                OutputStreamServer.write(Request, 0, Bytes_Read);
+                                OutputStreamServer.flush();
+                            }
+                        } catch (IOException e) {
                         }
-                    } catch (IOException e) {
+
+                        // Close the connections
+                        try {
+                            OutputStreamServer.close();
+                        } catch (IOException e) {
+
+                        }
                     }
+                };
 
-                    // Close the connections
-                    try {
-                        OutputStreamServer.close();
-                    } catch (IOException e) {
-
+                // client-to-server request thread
+                New_Thread.start();
+                // Read server's responses and pass them to the client.
+                int Bytes_Read;
+                try {
+                    while ((Bytes_Read = InputStreamServer.read(Reply)) != -1) {
+                    OutputStreamClient.write(Reply, 0, Bytes_Read);
+                    OutputStreamClient.flush();
                     }
-                }
-            };
-
-            // client-to-server request thread
-            New_Thread.start();
-            // Read server's responses and pass them to the client.
-            int Bytes_Read;
-            try {
-                while ((Bytes_Read = InputStreamServer.read(Reply)) != -1) {
-                OutputStreamClient.write(Reply, 0, Bytes_Read);
-                OutputStreamClient.flush();
-                }
-            } catch (IOException e) {
+                } catch (IOException e) {
             }
             // Close the connection
             OutputStreamClient.close();
