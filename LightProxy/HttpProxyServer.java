@@ -26,14 +26,30 @@ public class HttpProxyServer {
             serverSocket.setSoTimeout(1000 * 60);
             System.out.println("Http Proxy Server listen at: " + port);
 
+            final byte[] Request = new byte[1024];
+            byte[] Reply = new byte[4096];
+
             while (true) {
                 try {
-                    Socket socket = serverSocket.accept();
+                    Socket socket_client = serverSocket.accept();
 
-                    final InputStream InputStreamClient = socket.getInputStream();
-                    final OutputStream OutputStreamClient = socket.getOutputStream();
+                    final InputStream InputStreamClient = socket_client.getInputStream();
+                    final OutputStream OutputStreamClient = socket_client.getOutputStream();
 
+                    // 先手工写死请求的远端地址，实际需要从用户请求中解析出来
+                    String requestHost = "www.edulinks.cn";
+                    int requestPort = 80;
 
+                    try {
+                        Socket proxySocket = new Socket(requestHost, requestPort);
+                    }catch(IOException e){
+                        System.out.println("Remote Host can not be reached.");
+                    }
+
+                    final InputStream prxoyInputStream = proxySocket.getInputStream();
+                    final OutputStream proxyOutputStream = proxySocket.getOutputStream();
+
+                    
 
                     // System.out.println("New Thread !");
                     // executorService.submit(() -> handleClient(socket));
