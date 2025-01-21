@@ -49,8 +49,38 @@ public class HttpProxyServer {
                     final InputStream prxoyInputStream = proxySocket.getInputStream();
                     final OutputStream proxyOutputStream = proxySocket.getOutputStream();
 
-                    
+                    Thread New_Thread = new Thread(){
+                        public void run(){
+                            int Bytes_Read;
+                            try {
+                                while ( (Bytes_Read = InputStreamClient.read(Request)) != -1){
+                                    proxyOutputStream.write(Request, 0, Bytes_Read);
+                                    proxyOutputStream.flush();
+                                }
+                            }catch(IOException e){
+                                System.out.println(e);
+                            }
 
+                            try {
+                                proxyOutputStream.close();
+                            }catch(IOException e){
+                                System.out.println(e);
+                            }
+                        }
+                    };
+
+                    New_Thread.start();
+                    int Bytes_Read;
+                    try {
+                        while ( (Bytes_Read = prxoyInputStream.read(Reply))!= -1){
+                            OutputStreamClient.write(Reply, 0, Bytes_Read);
+                            OutputStreamClient.flush();
+                        }
+                    }catch(IOException e){
+                        System.out.println(e);
+                    }
+
+                    OutputStreamClient.close();
                     // System.out.println("New Thread !");
                     // executorService.submit(() -> handleClient(socket));
                 } catch (IOException e) {
@@ -59,7 +89,8 @@ public class HttpProxyServer {
             }
         } catch (Exception e) {
             e.printStackTrace();
-        }
+        } 
+        
         // try {
         //     Run_Server("127.0.0.1", port);
         // }catch(Exception e){
