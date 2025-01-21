@@ -33,7 +33,7 @@ public class HttpProxyServer {
                     final InputStream InputStreamClient = socket.getInputStream();
                     final OutputStream OutputStreamClient = socket.getOutputStream();
 
-                    
+
 
                     // System.out.println("New Thread !");
                     // executorService.submit(() -> handleClient(socket));
@@ -84,20 +84,21 @@ public class HttpProxyServer {
             // The thread to read the client's requests and to pass them
             Thread New_Thread = new Thread() {
                 public void run() {
-                int Bytes_Read;
-                try {
-                    while ((Bytes_Read = InputStreamClient.read(Request)) != -1) {
-                    OutputStreamServer.write(Request, 0, Bytes_Read);
-                    OutputStreamServer.flush();
+                    int Bytes_Read;
+                    try {
+                        while ((Bytes_Read = InputStreamClient.read(Request)) != -1) {
+                            OutputStreamServer.write(Request, 0, Bytes_Read);
+                            OutputStreamServer.flush();
+                        }
+                    } catch (IOException e) {
                     }
-                } catch (IOException e) {
-                }
 
-                // Close the connections
-                try {
-                    OutputStreamServer.close();
-                } catch (IOException e) {
-                }
+                    // Close the connections
+                    try {
+                        OutputStreamServer.close();
+                    } catch (IOException e) {
+
+                    }
                 }
             };
 
@@ -117,13 +118,13 @@ public class HttpProxyServer {
             } catch (IOException e) {
             System.err.println(e);
             } finally {
-            try {
-                if (Socket_Server != null)
-                Socket_Server.close();
-                if (Socket_Client != null)
-                Socket_Client.close();
-            } catch (IOException e) {
-            }
+                try {
+                    if (Socket_Server != null)
+                    Socket_Server.close();
+                    if (Socket_Client != null)
+                    Socket_Client.close();
+                } catch (IOException e) {
+                }
             }
         }
     }
