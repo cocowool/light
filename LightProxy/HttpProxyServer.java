@@ -95,11 +95,6 @@ public class HttpProxyServer {
             e.printStackTrace();
         } 
 
-        // try {
-        //     Run_Server("127.0.0.1", port);
-        // }catch(Exception e){
-        //     System.err.println(e);
-        // }
     }
 
     // public static void Run_Server(ServerSocket Socket_Client, String Proxy_Host, int Local_Port) throws IOException {
