@@ -59,7 +59,9 @@ public class HttpProxyServer {
                             try {
                                 //@ 在这里要判断用户发送的请求地址和端口，建立 Socket 链接
                                 BufferedReader client_reader = new BufferedReader(new InputStreamReader(InputStreamClient));
+                                String remoteRequest;
                                 String requestLine = client_reader.readLine();
+                                remoteRequest = requestLine + "\r\n";
                                 if( requestLine != null){
                                     String[] parts = requestLine.split(" ");
                                     if (parts.length >= 3) {
@@ -78,6 +80,7 @@ public class HttpProxyServer {
                                                     requestPort = Integer.parseInt(hostParts[1]);
                                                 }
                                             }
+                                            remoteRequest += line + "\r\n";
                                         }
 
                                         // 输出提取的信息
@@ -89,10 +92,13 @@ public class HttpProxyServer {
                                     }
                                 }
 
-                                while ( (Bytes_Read = InputStreamClient.read(Request)) != -1){
-                                    proxyOutputStream.write(Request, 0, Bytes_Read);
-                                    proxyOutputStream.flush();
-                                }
+                                proxyOutputStream.write(remoteRequest.getBytes());
+                                proxyOutputStream.flush();
+
+                                // while ( (Bytes_Read = InputStreamClient.read(Request)) != -1){
+                                //     proxyOutputStream.write(Request, 0, Bytes_Read);
+                                //     proxyOutputStream.flush();
+                                // }
                             }catch(IOException e){
                                 System.out.println(e);
                             }
