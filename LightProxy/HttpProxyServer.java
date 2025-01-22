@@ -57,6 +57,7 @@ public class HttpProxyServer {
                         public void run(){
                             int Bytes_Read;
                             try {
+                                //@ 在这里要判断用户发送的请求地址和端口，建立 Socket 链接
                                 while ( (Bytes_Read = InputStreamClient.read(Request)) != -1){
                                     proxyOutputStream.write(Request, 0, Bytes_Read);
                                     proxyOutputStream.flush();
@@ -96,84 +97,6 @@ public class HttpProxyServer {
         } 
 
     }
-
-    // public static void Run_Server(ServerSocket Socket_Client, String Proxy_Host, int Local_Port) throws IOException {
-    //     int Remote_Port = 80;
-    //     // Create a ServerSocket to listen connections
-    //     // ServerSocket Server_Socket = new ServerSocket(Local_Port);
-    //     final byte[] Request = new byte[1024];
-    //     byte[] Reply = new byte[4096];
-    //     while (true) {
-    //         // Socket Socket_Client = null;
-    //         Socket Socket_Server = null;
-    //         try {
-    //             // wait for a connection on the local port
-    //             // Socket_Client = Server_Socket.accept(); // 从入参中获得对象
-    //             final InputStream InputStreamClient = Socket_Client.getInputStream();
-    //             final OutputStream OutputStreamClient = Socket_Client.getOutputStream();
-
-    //             // Create the connection to the real server.
-    //             try {
-    //                 Socket_Server = new Socket(Proxy_Host, Remote_Port);
-    //             } catch (IOException e) {
-    //                 PrintWriter out = new PrintWriter(OutputStreamClient);
-    //                 out.print("The Proxy Server could not connect to " + Proxy_Host + ":" + Remote_Port
-    //                     + ":\n" + e + "\n");
-    //                 out.flush();
-    //                 Socket_Client.close();
-    //                 continue;
-    //             }
-
-    //             final InputStream InputStreamServer = Socket_Server.getInputStream();
-    //             final OutputStream OutputStreamServer = Socket_Server.getOutputStream();
-
-    //             // The thread to read the client's requests and to pass them
-    //             Thread New_Thread = new Thread() {
-    //                 public void run() {
-    //                     int Bytes_Read;
-    //                     try {
-    //                         while ((Bytes_Read = InputStreamClient.read(Request)) != -1) {
-    //                             OutputStreamServer.write(Request, 0, Bytes_Read);
-    //                             OutputStreamServer.flush();
-    //                         }
-    //                     } catch (IOException e) {
-    //                     }
-
-    //                     // Close the connections
-    //                     try {
-    //                         OutputStreamServer.close();
-    //                     } catch (IOException e) {
-
-    //                     }
-    //                 }
-    //             };
-
-    //             // client-to-server request thread
-    //             New_Thread.start();
-    //             // Read server's responses and pass them to the client.
-    //             int Bytes_Read;
-    //             try {
-    //                 while ((Bytes_Read = InputStreamServer.read(Reply)) != -1) {
-    //                 OutputStreamClient.write(Reply, 0, Bytes_Read);
-    //                 OutputStreamClient.flush();
-    //                 }
-    //             } catch (IOException e) {
-    //         }
-    //         // Close the connection
-    //         OutputStreamClient.close();
-    //         } catch (IOException e) {
-    //         System.err.println(e);
-    //         } finally {
-    //             try {
-    //                 if (Socket_Server != null)
-    //                 Socket_Server.close();
-    //                 if (Socket_Client != null)
-    //                 Socket_Client.close();
-    //             } catch (IOException e) {
-    //             }
-    //         }
-    //     }
-    // }
 
     private static void handleRequest(Socket socket, String request) {
         // 处理请求并返回响应
