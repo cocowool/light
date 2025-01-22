@@ -30,3 +30,5 @@ Which will support kafka / activemq as event / message channel.
 * https://www.cnblogs.com/muphy/p/14210917.html
 * [参考代码](https://github.com/mitre/HTTP-Proxy-Servlet)
 * [Opensource Http proxies](https://proxies.xhaus.com/)
+* [How to Create an HTTP Proxy Server in Java](https://www.delftstack.com/howto/java/java-proxy-server/)
+* [Http Message Parsing in Java Web Servers](https://stevenyue.com/blogs/http-message-parsing-in-java-web-servers/)
