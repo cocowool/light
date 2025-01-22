@@ -61,13 +61,25 @@ public class HttpProxyServer {
                                 BufferedReader client_reader = new BufferedReader(new InputStreamReader(InputStreamClient));
                                 String remoteRequest;
                                 String requestLine = client_reader.readLine();
-                                remoteRequest = requestLine + "\r\n";
+                                // remoteRequest = requestLine + "\r\n";
                                 if( requestLine != null){
                                     String[] parts = requestLine.split(" ");
                                     if (parts.length >= 3) {
                                         String requestMethod = parts[0];
                                         String requestPath = parts[1];
                                         String requestProtocol = parts[2];
+
+                                        if (requestPath.startsWith("http://")){
+                                            requestPath = requestPath.substring(7);
+                                        }else if( requestPath.startsWith("https://")){
+                                            requestPath = requestPath.substring(8);
+                                        }
+                                        int pathIndex = requestPath.indexOf('/');
+                                        if(pathIndex != -1){
+                                            requestPath = requestPath.substring(pathIndex);
+                                        }
+                                        System.out.println("Request path : " + requestPath);
+                                        remoteRequest = requestMethod + " " + requestPath + " " + requestProtocol + "\r\n";
 
                                         String requestHost = null;
                                         int requestPort = 80;
@@ -92,6 +104,8 @@ public class HttpProxyServer {
                                     }
                                 }
 
+                                System.out.println("Send Request to Remote Server:");
+                                System.out.println(remoteRequest);
                                 proxyOutputStream.write(remoteRequest.getBytes());
                                 proxyOutputStream.flush();
 
