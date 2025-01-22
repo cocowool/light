@@ -58,6 +58,37 @@ public class HttpProxyServer {
                             int Bytes_Read;
                             try {
                                 //@ 在这里要判断用户发送的请求地址和端口，建立 Socket 链接
+                                BufferedReader client_reader = new BufferedReader(new InputStreamReader(InputStreamClient));
+                                String requestLine = client_reader.readLine();
+                                if( requestLine != null){
+                                    String[] parts = requestLine.split(" ");
+                                    if (parts.length >= 3) {
+                                        String requestMethod = parts[0];
+                                        String requestPath = parts[1];
+                                        String requestProtocol = parts[2];
+
+                                        String requestHost = null;
+                                        int requestPort = 80;
+                                        String line;
+                                        while((line = client_reader.readLine()) != null && !line.isEmpty()){
+                                            if(line.startsWith("Host: ")){
+                                                String[] hostParts = line.substring(6).split(":");
+                                                requestHost = hostParts[0];
+                                                if(hostParts.length > 1){
+                                                    requestPort = Integer.parseInt(hostParts[1]);
+                                                }
+                                            }
+                                        }
+
+                                        // 输出提取的信息
+                                        System.out.println("Method: " + requestMethod);
+                                        System.out.println("Path: " + requestPath);
+                                        System.out.println("Protocol: " + requestProtocol);
+                                        System.out.println("Host: " + requestHost);
+                                        System.out.println("Port: " + requestPort);
+                                    }
+                                }
+
                                 while ( (Bytes_Read = InputStreamClient.read(Request)) != -1){
                                     proxyOutputStream.write(Request, 0, Bytes_Read);
                                     proxyOutputStream.flush();
@@ -97,6 +128,8 @@ public class HttpProxyServer {
         } 
 
     }
+
+
 
     private static void handleRequest(Socket socket, String request) {
         // 处理请求并返回响应
