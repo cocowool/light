@@ -39,9 +39,105 @@ public class HttpProxyServer {
                     final InputStream InputStreamClient = socket_client.getInputStream();
                     final OutputStream OutputStreamClient = socket_client.getOutputStream();
 
-                    // 先手工写死请求的远端地址，实际需要从用户请求中解析出来
-                    String requestHost = "www.edulinks.cn";
+                    String requestHost = null;
                     int requestPort = 80;
+                    try {
+                        //@ 在这里要判断用户发送的请求地址和端口，建立 Socket 链接
+                        BufferedReader client_reader = new BufferedReader(new InputStreamReader(InputStreamClient));
+                        String remoteRequest = "";
+                        String requestLine = client_reader.readLine();
+                        // remoteRequest = "";
+                        if( requestLine != null){
+                            String[] parts = requestLine.split(" ");
+                            if (parts.length >= 3) {
+                                String requestMethod = parts[0];
+                                String requestPath = parts[1];
+                                String requestProtocol = parts[2];
+
+                                if (requestPath.startsWith("http://")){
+                                    requestPath = requestPath.substring(7);
+                                }else if( requestPath.startsWith("https://")){
+                                    requestPath = requestPath.substring(8);
+                                }
+                                int pathIndex = requestPath.indexOf('/');
+                                if(pathIndex != -1){
+                                    requestPath = requestPath.substring(pathIndex);
+                                }
+                                System.out.println("Request path : " + requestPath);
+                                remoteRequest = requestMethod + " " + requestPath + " " + requestProtocol + "\r\n";
+
+                                String line;
+                                while((line = client_reader.readLine()) != null && !line.isEmpty()){
+                                    if(line.startsWith("Host: ")){
+                                        String[] hostParts = line.substring(6).split(":");
+                                        requestHost = hostParts[0];
+                                        if(hostParts.length > 1){
+                                            requestPort = Integer.parseInt(hostParts[1]);
+                                        }
+                                    }
+                                    remoteRequest += line + "\r\n";
+                                }
+
+                                // 输出提取的信息
+                                System.out.println("Method: " + requestMethod);
+                                System.out.println("Path: " + requestPath);
+                                System.out.println("Protocol: " + requestProtocol);
+                                System.out.println("Host: " + requestHost);
+                                System.out.println("Port: " + requestPort);
+                            }
+                        }
+
+                        remoteRequest += "\r\n";
+                        System.out.println("Send Request to Remote Server:");
+                        System.out.println(remoteRequest);
+
+                        // 先手工写死请求的远端地址，实际需要从用户请求中解析出来
+                        if( requestHost == null){
+                            requestHost = "www.edulinks.cn";
+                            requestPort = 80;    
+                        }
+
+                        proxySocket = new Socket(requestHost, requestPort);
+                        final InputStream prxoyInputStream = proxySocket.getInputStream();
+                        final OutputStream proxyOutputStream = proxySocket.getOutputStream();
+
+                        proxyOutputStream.write(remoteRequest.getBytes());
+                        proxyOutputStream.flush();
+
+                        // proxySocket.shutdownOutput();
+
+                        int Bytes_Read;
+                        try {
+                            BufferedReader reader = new BufferedReader(new InputStreamReader(prxoyInputStream));
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                System.out.println(line);
+                            }
+                
+    
+                            while ( (Bytes_Read = prxoyInputStream.read(Reply))!= -1){
+                                System.out.println(Reply);
+                                OutputStreamClient.write(Reply, 0, Bytes_Read);
+                                OutputStreamClient.flush();
+                            }
+    
+                        }catch(IOException e){
+                            System.out.println("Get response Error !");
+                            System.out.println(e);
+                            e.printStackTrace();
+                        }
+    
+    
+
+                        // while ( (Bytes_Read = InputStreamClient.read(Request)) != -1){
+                        //     proxyOutputStream.write(Request, 0, Bytes_Read);
+                        //     proxyOutputStream.flush();
+                        // }
+                    }catch(IOException e){
+                        System.out.println("Send request Error !");
+                        System.out.println(e);
+                    }
+
 
                     try {
                         proxySocket = new Socket(requestHost, requestPort);
@@ -50,124 +146,12 @@ public class HttpProxyServer {
                         continue;
                     }
 
-                    final InputStream prxoyInputStream = proxySocket.getInputStream();
-                    final OutputStream proxyOutputStream = proxySocket.getOutputStream();
-
-                    Thread New_Thread = new Thread(){
-                        public void run(){
-                            int Bytes_Read;
-                            try {
-                                //@ 在这里要判断用户发送的请求地址和端口，建立 Socket 链接
-                                BufferedReader client_reader = new BufferedReader(new InputStreamReader(InputStreamClient));
-                                String remoteRequest = "";
-                                String requestLine = client_reader.readLine();
-                                // remoteRequest = "";
-                                if( requestLine != null){
-                                    String[] parts = requestLine.split(" ");
-                                    if (parts.length >= 3) {
-                                        String requestMethod = parts[0];
-                                        String requestPath = parts[1];
-                                        String requestProtocol = parts[2];
-
-                                        if (requestPath.startsWith("http://")){
-                                            requestPath = requestPath.substring(7);
-                                        }else if( requestPath.startsWith("https://")){
-                                            requestPath = requestPath.substring(8);
-                                        }
-                                        int pathIndex = requestPath.indexOf('/');
-                                        if(pathIndex != -1){
-                                            requestPath = requestPath.substring(pathIndex);
-                                        }
-                                        System.out.println("Request path : " + requestPath);
-                                        remoteRequest = requestMethod + " " + requestPath + " " + requestProtocol + "\r\n";
-
-                                        String requestHost = null;
-                                        int requestPort = 80;
-                                        String line;
-                                        while((line = client_reader.readLine()) != null && !line.isEmpty()){
-                                            if(line.startsWith("Host: ")){
-                                                String[] hostParts = line.substring(6).split(":");
-                                                requestHost = hostParts[0];
-                                                if(hostParts.length > 1){
-                                                    requestPort = Integer.parseInt(hostParts[1]);
-                                                }
-                                            }
-                                            remoteRequest += line + "\r\n";
-                                        }
-
-                                        // 输出提取的信息
-                                        System.out.println("Method: " + requestMethod);
-                                        System.out.println("Path: " + requestPath);
-                                        System.out.println("Protocol: " + requestProtocol);
-                                        System.out.println("Host: " + requestHost);
-                                        System.out.println("Port: " + requestPort);
-                                    }
-                                }
-
-                                remoteRequest += "\r\n";
-                                System.out.println("Send Request to Remote Server:");
-                                System.out.println(remoteRequest);
-                                proxyOutputStream.write(remoteRequest.getBytes());
-                                proxyOutputStream.flush();
-
-                                // while ( (Bytes_Read = InputStreamClient.read(Request)) != -1){
-                                //     proxyOutputStream.write(Request, 0, Bytes_Read);
-                                //     proxyOutputStream.flush();
-                                // }
-                            }catch(IOException e){
-                                System.out.println("Send request Error !");
-                                System.out.println(e);
-                            }
-
-                            try {
-                                proxyOutputStream.close();
-                            }catch(IOException e){
-                                System.out.println(e);
-                            }
-                        }
-                    };
-
-                    New_Thread.start();
-                    int Bytes_Read;
-                    try {
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(prxoyInputStream));
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            System.out.println(line);
-                        }
-            
-
-                        while ( (Bytes_Read = prxoyInputStream.read(Reply))!= -1){
-                            System.out.println(Reply);
-                            OutputStreamClient.write(Reply, 0, Bytes_Read);
-                            OutputStreamClient.flush();
-                        }
-                    }catch(IOException e){
-                        System.out.println("Get response Error !");
-                        System.out.println(e);
-                        e.printStackTrace();
-                    }
 
                     OutputStreamClient.close();
                     // System.out.println("New Thread !");
                     // executorService.submit(() -> handleClient(socket));
 
-                    String manualReqest = "GET / HTTP/1.1\r\n";
-                    manualReqest += "Host: www.edulinks.cn\r\n";
-                    manualReqest += "\r\n";
 
-                    proxyOutputStream.write(manualReqest.getBytes());
-                    proxyOutputStream.flush();
-
-                    // 读取服务器响应并打印到终端
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(prxoyInputStream));
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        System.out.println(line);
-                    }
-
-
-                    System.out.println(prxoyInputStream.read(Reply));
                 } catch (IOException e) {
                     System.out.println("Proxy can not get response. ");
                     e.printStackTrace();
