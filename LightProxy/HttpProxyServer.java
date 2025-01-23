@@ -107,14 +107,7 @@ public class HttpProxyServer {
                         // proxySocket.shutdownOutput();
 
                         int Bytes_Read;
-                        try {
-                            BufferedReader reader = new BufferedReader(new InputStreamReader(prxoyInputStream));
-                            String line;
-                            while ((line = reader.readLine()) != null) {
-                                System.out.println(line);
-                            }
-                
-    
+                        try {    
                             while ( (Bytes_Read = prxoyInputStream.read(Reply))!= -1){
                                 System.out.println(Reply);
                                 OutputStreamClient.write(Reply, 0, Bytes_Read);
@@ -126,32 +119,12 @@ public class HttpProxyServer {
                             System.out.println(e);
                             e.printStackTrace();
                         }
-    
-    
-
-                        // while ( (Bytes_Read = InputStreamClient.read(Request)) != -1){
-                        //     proxyOutputStream.write(Request, 0, Bytes_Read);
-                        //     proxyOutputStream.flush();
-                        // }
                     }catch(IOException e){
                         System.out.println("Send request Error !");
                         System.out.println(e);
                     }
 
-
-                    try {
-                        proxySocket = new Socket(requestHost, requestPort);
-                    }catch(IOException e){
-                        System.out.println("Remote Host can not be reached.");
-                        continue;
-                    }
-
-
                     OutputStreamClient.close();
-                    // System.out.println("New Thread !");
-                    // executorService.submit(() -> handleClient(socket));
-
-
                 } catch (IOException e) {
                     System.out.println("Proxy can not get response. ");
                     e.printStackTrace();
@@ -160,7 +133,6 @@ public class HttpProxyServer {
         } catch (Exception e) {
             e.printStackTrace();
         } 
-
     }
 
 
