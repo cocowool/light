@@ -143,6 +143,15 @@ public class HttpProxyServer {
                     OutputStreamClient.close();
                     // System.out.println("New Thread !");
                     // executorService.submit(() -> handleClient(socket));
+
+                    String manualReqest = "GET / HTTP/1.1\r\n";
+                    manualReqest += "Host: www.edulinks.cn\r\n";
+                    manualReqest += "\r\n";
+
+                    proxyOutputStream.write(manualReqest.getBytes());
+                    proxyOutputStream.flush();
+
+                    System.out.println(prxoyInputStream.read(Reply));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
