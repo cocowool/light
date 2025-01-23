@@ -130,6 +130,13 @@ public class HttpProxyServer {
                     New_Thread.start();
                     int Bytes_Read;
                     try {
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(prxoyInputStream));
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            System.out.println(line);
+                        }
+            
+
                         while ( (Bytes_Read = prxoyInputStream.read(Reply))!= -1){
                             System.out.println(Reply);
                             OutputStreamClient.write(Reply, 0, Bytes_Read);
@@ -138,6 +145,7 @@ public class HttpProxyServer {
                     }catch(IOException e){
                         System.out.println("Get response Error !");
                         System.out.println(e);
+                        e.printStackTrace();
                     }
 
                     OutputStreamClient.close();
@@ -151,8 +159,17 @@ public class HttpProxyServer {
                     proxyOutputStream.write(manualReqest.getBytes());
                     proxyOutputStream.flush();
 
+                    // 读取服务器响应并打印到终端
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(prxoyInputStream));
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        System.out.println(line);
+                    }
+
+
                     System.out.println(prxoyInputStream.read(Reply));
                 } catch (IOException e) {
+                    System.out.println("Proxy can not get response. ");
                     e.printStackTrace();
                 }
             }
