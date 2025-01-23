@@ -59,9 +59,9 @@ public class HttpProxyServer {
                             try {
                                 //@ 在这里要判断用户发送的请求地址和端口，建立 Socket 链接
                                 BufferedReader client_reader = new BufferedReader(new InputStreamReader(InputStreamClient));
-                                String remoteRequest;
+                                String remoteRequest = "";
                                 String requestLine = client_reader.readLine();
-                                // remoteRequest = requestLine + "\r\n";
+                                // remoteRequest = "";
                                 if( requestLine != null){
                                     String[] parts = requestLine.split(" ");
                                     if (parts.length >= 3) {
@@ -104,6 +104,7 @@ public class HttpProxyServer {
                                     }
                                 }
 
+                                remoteRequest += "\r\n";
                                 System.out.println("Send Request to Remote Server:");
                                 System.out.println(remoteRequest);
                                 proxyOutputStream.write(remoteRequest.getBytes());
@@ -114,6 +115,7 @@ public class HttpProxyServer {
                                 //     proxyOutputStream.flush();
                                 // }
                             }catch(IOException e){
+                                System.out.println("Send request Error !");
                                 System.out.println(e);
                             }
 
@@ -133,6 +135,7 @@ public class HttpProxyServer {
                             OutputStreamClient.flush();
                         }
                     }catch(IOException e){
+                        System.out.println("Get response Error !");
                         System.out.println(e);
                     }
 
