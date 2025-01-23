@@ -131,6 +131,7 @@ public class HttpProxyServer {
                     int Bytes_Read;
                     try {
                         while ( (Bytes_Read = prxoyInputStream.read(Reply))!= -1){
+                            System.out.println(Reply);
                             OutputStreamClient.write(Reply, 0, Bytes_Read);
                             OutputStreamClient.flush();
                         }
