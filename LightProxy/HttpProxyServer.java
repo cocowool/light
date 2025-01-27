@@ -26,14 +26,12 @@ public class HttpProxyServer {
             serverSocket.setSoTimeout(1000 * 60);
             System.out.println("Http Proxy Server listen at: " + port);
 
-            final byte[] Request = new byte[1024];
-            byte[] Reply = new byte[4096];
 
             while (true) {
-                Socket socket_client = null;
+                // Socket socket_client = null;
 
-                socket_client = serverSocket.accept();
-                Thread thread = new Thread( () -> handleClientRequest(socket_client) );
+                Socket socket_client = serverSocket.accept();
+                Thread thread = new Thread( ()->handleClientRequest(socket_client) );
                 thread.start();
             }
         } catch (Exception e) {
@@ -48,8 +46,11 @@ public class HttpProxyServer {
     }
 
     private static void handleClientRequest(Socket socket_client){
+        final byte[] Request = new byte[1024];
+        byte[] Reply = new byte[4096];
+
         Socket proxySocket = null;
-        
+
         try {
 
             final InputStream InputStreamClient = socket_client.getInputStream();
@@ -141,6 +142,8 @@ public class HttpProxyServer {
             }
 
             OutputStreamClient.close();
+            proxySocket.close();
+            socket_client.close();
         } catch (IOException e) {
             System.out.println("Proxy can not get response. ");
             e.printStackTrace();
