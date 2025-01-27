@@ -10,6 +10,7 @@ Which will support kafka / activemq as event / message channel.
 * LightServer, automation server
 
 # Light Proxy Feature
+* 多个线程响应用户请求
 * 支持 SOCKS5
 
 # TODO
