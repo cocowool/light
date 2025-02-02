@@ -17,6 +17,13 @@ public class HttpProxyServer {
     private static final int THREAD_POOL_SIZE = 10;
     private static final ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
 
+    private ServerSocket serverSocket;
+
+    /**
+     * 后续用作信号量
+     */
+    private volatile boolean running = true;
+
     public static void main(String[] args) {
         int port = 8080; // HTTP代理端口
 
@@ -43,6 +50,10 @@ public class HttpProxyServer {
     private static void handleRequest(Socket socket, String request) {
         // 处理请求并返回响应
         // ...
+    }
+
+    public void listen(){
+        
     }
 
     private static void handleClientRequest(Socket socket_client){
