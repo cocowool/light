@@ -33,3 +33,6 @@ Which will support kafka / activemq as event / message channel.
 * [Opensource Http proxies](https://proxies.xhaus.com/)
 * [How to Create an HTTP Proxy Server in Java](https://www.delftstack.com/howto/java/java-proxy-server/)
 * [Http Message Parsing in Java Web Servers](https://stevenyue.com/blogs/http-message-parsing-in-java-web-servers/)
+* https://www.proxiesapi.com/blog/how-to-build-a-super-simple-http-proxy-in-java.html.php
+* https://www.dariawan.com/tutorials/java/multiple-requests-using-http11-vs-http2/
+* https://segmentfault.com/a/1190000039266899
