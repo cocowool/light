@@ -25,27 +25,37 @@ public class HttpProxyServer {
     private volatile boolean running = true;
 
     public static void main(String[] args) {
-        int port = 8080; // HTTP代理端口
-
-        // @TODO 解析用户自定义的端口参数
-        try ( ServerSocket serverSocket = new ServerSocket(port) ) {
-            //设置服务端与客户端连接未活动超时时间
-            serverSocket.setSoTimeout(1000 * 60);
-            System.out.println("Http Proxy Server listen at: " + port);
-
-
-            while (true) {
-                // Socket socket_client = null;
-
-                Socket socket_client = serverSocket.accept();
-                Thread thread = new Thread( ()->handleClientRequest(socket_client) );
-                thread.start();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } 
+        HttpProxyServer hps = new HttpProxyServer();
+        hps.hello();
     }
 
+    public HttpProxyServer(){
+        int port = 8080;
+
+        try {
+            serverSocket = new ServerSocket(port);
+            //设置服务端与客户端连接未活动超时时间
+            serverSocket.setSoTimeout(1000 * 60);
+            System.out.println("Http Proxy Server listen at : " + port);
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+
+        while (running) {
+            try {
+                Socket socket_client = serverSocket.accept();
+                Thread thread = new Thread( ()->handleClientRequest(socket_client) );
+                thread.start();    
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+
+        }
+    }
+
+    public void hello(){
+        System.out.println("Hello from Http Proxy Server");
+    }
 
     private static void handleRequest(Socket socket, String request) {
         // 处理请求并返回响应
@@ -53,7 +63,7 @@ public class HttpProxyServer {
     }
 
     public void listen(){
-        
+
     }
 
     private static void handleClientRequest(Socket socket_client){
