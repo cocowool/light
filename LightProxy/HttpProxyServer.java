@@ -12,6 +12,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 
 
 /**
@@ -30,6 +31,8 @@ public class HttpProxyServer implements Runnable {
     // private static final ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
 
     private ServerSocket serverSocket;
+
+    static ArrayList<Thread> servicingThreads;
 
     /**
      * 后续用作信号量
@@ -63,7 +66,9 @@ public class HttpProxyServer implements Runnable {
         while (running) {
             try {
                 Socket socket_client = serverSocket.accept();
-                Thread thread = new Thread( ()->handleClientRequest(socket_client) );
+                Thread thread = new Thread(() ->handleClientRequest(socket_client) );
+                servicingThreads.add(thread);
+                // Thread thread = new Thread( ()->handleClientRequest(socket_client) );
                 thread.start();    
             }catch(Exception e){
                 e.printStackTrace();
