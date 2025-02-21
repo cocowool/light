@@ -3,6 +3,7 @@
 // import java.util.concurrent.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -47,16 +48,19 @@ public class HttpProxyServer implements Runnable {
     public void HttpProxyServer(){
         int port = 8080;
 
+        servicingThreads = new ArrayList<>();
+
 		new Thread(this).start();	// Starts overriden run() method at bottom
 
         try {
             serverSocket = new ServerSocket(port);
             //设置服务端与客户端连接未活动超时时间
-            serverSocket.setSoTimeout(1000 * 60);
+            // serverSocket.setSoTimeout(1000 * 60);
             System.out.println("Http Proxy Server listen at : " + port);
-
+            running = true;
         }catch(Exception e){
             e.printStackTrace();
+            running = false;
         }
 
     }
@@ -66,11 +70,17 @@ public class HttpProxyServer implements Runnable {
         while (running) {
             try {
                 Socket socket_client = serverSocket.accept();
+
                 Thread thread = new Thread(() ->handleClientRequest(socket_client) );
+
                 servicingThreads.add(thread);
                 // Thread thread = new Thread( ()->handleClientRequest(socket_client) );
+
                 thread.start();    
+            }catch(SocketException e){
+                System.out.println("Socket Error!");
             }catch(Exception e){
+                System.out.println("Accept Error!");
                 e.printStackTrace();
             }
 
