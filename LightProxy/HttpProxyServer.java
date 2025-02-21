@@ -1,6 +1,18 @@
-import java.io.*;
-import java.net.*;
-import java.util.concurrent.*;
+// import java.io.*;
+// import java.net.*;
+// import java.util.concurrent.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+
 
 /**
  * 
@@ -13,9 +25,9 @@ import java.util.concurrent.*;
  * 1. 不能持续响应一个客户端的连续请求
  * 
  */
-public class HttpProxyServer {
-    private static final int THREAD_POOL_SIZE = 10;
-    private static final ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+public class HttpProxyServer implements Runnable {
+    // private static final int THREAD_POOL_SIZE = 10;
+    // private static final ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
 
     private ServerSocket serverSocket;
 
@@ -26,20 +38,27 @@ public class HttpProxyServer {
 
     public static void main(String[] args) {
         HttpProxyServer hps = new HttpProxyServer();
-        hps.hello();
+        hps.listen();
     }
 
-    public HttpProxyServer(){
+    public void HttpProxyServer(){
         int port = 8080;
+
+		new Thread(this).start();	// Starts overriden run() method at bottom
 
         try {
             serverSocket = new ServerSocket(port);
             //设置服务端与客户端连接未活动超时时间
             serverSocket.setSoTimeout(1000 * 60);
             System.out.println("Http Proxy Server listen at : " + port);
+
         }catch(Exception e){
             e.printStackTrace();
         }
+
+    }
+
+    public void listen(){
 
         while (running) {
             try {
@@ -53,17 +72,9 @@ public class HttpProxyServer {
         }
     }
 
-    public void hello(){
-        System.out.println("Hello from Http Proxy Server");
-    }
-
     private static void handleRequest(Socket socket, String request) {
         // 处理请求并返回响应
         // ...
-    }
-
-    public void listen(){
-
     }
 
     private static void handleClientRequest(Socket socket_client){
@@ -170,6 +181,11 @@ public class HttpProxyServer {
             e.printStackTrace();
         }
 
+    }
+
+    @Override
+    public void run(){
+        System.out.println("New thread is running ... ");
     }
 }
 
