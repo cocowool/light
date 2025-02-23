@@ -87,9 +87,20 @@ public class HttpProxyServer implements Runnable {
         }
     }
 
-    private static void handleRequest(Socket socket, String request) {
-        // 处理请求并返回响应
-        // ...
+    private static void handleRequest(Socket socket_client) {
+        try {
+            socket_client.setSoTimeout(2000);            
+            BufferedReader proxyToClientBr = new BufferedReader(new InputStreamReader(socket_client.getInputStream()));
+            BufferedWriter proxyToClientBw = new BufferedWriter(new OutputStreamWriter(socket_client.getOutputStream()));
+        } catch (Exception e) {
+            System.out.println("Set timeout Error!");
+            e.printStackTrace();
+        }
+        
+        // 解析请求方法和请求地址
+        String requeString;
+        
+        
     }
 
     private static void handleClientRequest(Socket socket_client){
