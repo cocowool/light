@@ -71,7 +71,8 @@ public class HttpProxyServer implements Runnable {
             try {
                 Socket socket_client = serverSocket.accept();
 
-                Thread thread = new Thread( () ->handleClientRequest(socket_client) );
+                // Thread thread = new Thread( () ->handleClientRequest(socket_client) );
+                Thread thread = new Thread( () ->handleRequest(socket_client) );
 
                 servicingThreads.add(thread);
                 // Thread thread = new Thread( ()->handleClientRequest(socket_client) );
@@ -88,18 +89,28 @@ public class HttpProxyServer implements Runnable {
     }
 
     private static void handleRequest(Socket socket_client) {
+        BufferedReader proxyToClientBr = null;
+        BufferedWriter proxyToClientBw = null;
+
         try {
             socket_client.setSoTimeout(2000);            
-            BufferedReader proxyToClientBr = new BufferedReader(new InputStreamReader(socket_client.getInputStream()));
-            BufferedWriter proxyToClientBw = new BufferedWriter(new OutputStreamWriter(socket_client.getOutputStream()));
+            proxyToClientBr = new BufferedReader(new InputStreamReader(socket_client.getInputStream()));
+            proxyToClientBw = new BufferedWriter(new OutputStreamWriter(socket_client.getOutputStream()));
         } catch (Exception e) {
             System.out.println("Set timeout Error!");
             e.printStackTrace();
         }
         
-        // 解析请求方法和请求地址
-        String requeString;
-        
+        try{
+            // 解析请求方法和请求地址
+            String requestString;
+            requestString = proxyToClientBr.readLine();
+
+            System.out.println("Reuest Received " + requestString);
+        }catch(Exception e){
+            System.out.println("Handle Request Error!");
+            e.printStackTrace();
+        }
         
     }
 
