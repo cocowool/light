@@ -45,7 +45,7 @@ public class HttpProxyServer implements Runnable {
         hps.listen();
     }
 
-    public void HttpProxyServer(){
+    public  HttpProxyServer(){
         int port = 8080;
 
         servicingThreads = new ArrayList<>();
@@ -71,7 +71,7 @@ public class HttpProxyServer implements Runnable {
             try {
                 Socket socket_client = serverSocket.accept();
 
-                Thread thread = new Thread(() ->handleClientRequest(socket_client) );
+                Thread thread = new Thread( () ->handleClientRequest(socket_client) );
 
                 servicingThreads.add(thread);
                 // Thread thread = new Thread( ()->handleClientRequest(socket_client) );
