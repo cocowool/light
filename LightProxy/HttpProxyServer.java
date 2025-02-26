@@ -93,7 +93,7 @@ public class HttpProxyServer implements Runnable {
         BufferedWriter proxyToClientBw = null;
 
         try {
-            socket_client.setSoTimeout(2000);            
+            socket_client.setSoTimeout(4000);            
             proxyToClientBr = new BufferedReader(new InputStreamReader(socket_client.getInputStream()));
             proxyToClientBw = new BufferedWriter(new OutputStreamWriter(socket_client.getOutputStream()));
         } catch (Exception e) {
