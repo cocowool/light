@@ -104,14 +104,19 @@ public class HttpProxyServer implements Runnable {
         try{
             // 解析请求方法和请求地址
             String requestString;
-            requestString = proxyToClientBr.readLine();
+            // requestString = proxyToClientBr.readLine();
 
-            System.out.println("Reuest Received " + requestString);
+            // System.out.println("Reuest header: " + requestString);
 
     		// Get the Request type
-    		String request = requestString.substring(0,requestString.indexOf(' '));
-            System.out.println("Request url : " + request);
-            
+    		// String request = requestString.substring(0,requestString.indexOf(' '));
+            // System.out.println("Request url : " + request);
+
+            while( (requestString = proxyToClientBr.readLine()) != null && !requestString.isEmpty()){
+                System.out.println("Request header : " + requestString);
+            }
+            proxyToClientBr.close();
+
         }catch(Exception e){
             System.out.println("Handle Request Error!");
             e.printStackTrace();
