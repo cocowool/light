@@ -107,6 +107,11 @@ public class HttpProxyServer implements Runnable {
             requestString = proxyToClientBr.readLine();
 
             System.out.println("Reuest Received " + requestString);
+
+    		// Get the Request type
+    		String request = requestString.substring(0,requestString.indexOf(' '));
+            System.out.println("Request url : " + request);
+            
         }catch(Exception e){
             System.out.println("Handle Request Error!");
             e.printStackTrace();
