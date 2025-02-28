@@ -93,7 +93,8 @@ public class HttpProxyServer implements Runnable {
         BufferedWriter proxyToClientBw = null;
 
         try {
-            socket_client.setSoTimeout(4000);            
+            // 2025-02-28 如果设置超时时间，则通过 telnet 发送请求会失败，不太清楚具体原因，先注释掉
+            // socket_client.setSoTimeout(4000);
             proxyToClientBr = new BufferedReader(new InputStreamReader(socket_client.getInputStream()));
             proxyToClientBw = new BufferedWriter(new OutputStreamWriter(socket_client.getOutputStream()));
         } catch (Exception e) {
@@ -115,7 +116,7 @@ public class HttpProxyServer implements Runnable {
             while( (requestString = proxyToClientBr.readLine()) != null && !requestString.isEmpty()){
                 System.out.println("Request header : " + requestString);
             }
-            proxyToClientBr.close();
+            // proxyToClientBr.close();
 
         }catch(Exception e){
             System.out.println("Handle Request Error!");
