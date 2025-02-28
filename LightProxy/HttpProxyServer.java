@@ -105,6 +105,7 @@ public class HttpProxyServer implements Runnable {
         try{
             // 解析请求方法和请求地址
             String requestString;
+            String requestHeader = "";
             // requestString = proxyToClientBr.readLine();
 
             // System.out.println("Reuest header: " + requestString);
@@ -114,9 +115,12 @@ public class HttpProxyServer implements Runnable {
             // System.out.println("Request url : " + request);
 
             while( (requestString = proxyToClientBr.readLine()) != null && !requestString.isEmpty()){
-                System.out.println("Request header : " + requestString);
+                requestHeader += requestString + "\r\n";
             }
-            // proxyToClientBr.close();
+
+            System.out.println("Request header : ");
+            System.out.println( requestHeader );
+            proxyToClientBr.close();
 
         }catch(Exception e){
             System.out.println("Handle Request Error!");
