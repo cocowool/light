@@ -242,17 +242,3 @@ public class HttpProxyServer implements Runnable {
     }
 }
 
-
-/**
- * HTTP 请求头解析
- * 
- * @author cocowool@qq.com
- *
- */
-public class HttpRequestParser {
-    //匹配请求行的正则表达式
-    private static final Pattern REQUEST_LINE_PATTERN = Pattern.compile("^(GET|POST|PUT|DELETE|HEAD|OPTIONS)\\s+(\\S+).*");
-
-    //匹配绝对URL的正则表达式
-    private static final Pattern ABSOLUTE_URL_PATTERN = Pattern.compile("^(https?)://([^:/?#]+)(?::(\\d+))?(/\\S*)?");
-}
