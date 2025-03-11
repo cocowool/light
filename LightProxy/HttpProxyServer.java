@@ -17,6 +17,9 @@ import java.util.ArrayList;
 
 import java.util.regex.Pattern;
 
+import java.util.Map;
+// import HttpRequestParser;
+
 /**
  * 
  * 2024-11-14 对于telnet发起的简单http请求能够正常返回，不支持 postman 请求
@@ -59,6 +62,11 @@ public class HttpProxyServer implements Runnable {
             // serverSocket.setSoTimeout(1000 * 60);
             System.out.println("Http Proxy Server listen at : " + port);
             running = true;
+
+            String request = "GET http://example.com:8080/api/v1 HTTP/1.1\r\n" + "User-Agent: test\r\n\r\n";
+            Map<String, String> result = HttpRequestParser.parseRequest(request);
+            System.out.println(result.get("host"));
+            System.out.println("Test HttpRequestParser!");
         }catch(Exception e){
             e.printStackTrace();
             running = false;
@@ -122,6 +130,11 @@ public class HttpProxyServer implements Runnable {
             System.out.println("Request header : ");
             System.out.println( requestHeader );
             proxyToClientBr.close();
+
+            Map<String, String> result = HttpRequestParser.parseRequest(requestHeader);
+            System.out.println(result.get("host"));
+            System.out.println("Test HttpRequestParser!");
+
 
         }catch(Exception e){
             System.out.println("Handle Request Error!");
