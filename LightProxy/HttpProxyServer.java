@@ -4,6 +4,9 @@
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.URL;
+import java.net.HttpURLConnection;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -62,11 +65,6 @@ public class HttpProxyServer implements Runnable {
             // serverSocket.setSoTimeout(1000 * 60);
             System.out.println("Http Proxy Server listen at : " + port);
             running = true;
-
-            String request = "GET http://example.com:8080/api/v1 HTTP/1.1\r\n" + "User-Agent: test\r\n\r\n";
-            Map<String, String> result = HttpRequestParser.parseRequest(request);
-            System.out.println(result.get("host"));
-            System.out.println("Test HttpRequestParser!");
         }catch(Exception e){
             e.printStackTrace();
             running = false;
@@ -129,11 +127,17 @@ public class HttpProxyServer implements Runnable {
 
             System.out.println("Request header : ");
             System.out.println( requestHeader );
-            proxyToClientBr.close();
+            // proxyToClientBr.close();
 
             Map<String, String> result = HttpRequestParser.parseRequest(requestHeader);
             System.out.println(result.get("host"));
             System.out.println("Test HttpRequestParser!");
+
+            // 判断是否有 Cache
+
+            // 判断是否 Block
+
+            sendResponseToClient(result, proxyToClientBw);
 
 
         }catch(Exception e){
@@ -142,6 +146,57 @@ public class HttpProxyServer implements Runnable {
         }
         
     }
+
+    /**
+     * 返回普通的HTTP请求
+     * @param urlResult
+     */
+	private static void sendResponseToClient(Map<String, String> urlResult, BufferedWriter proxyToClientBw){
+
+		try{								
+				// Create the URL
+				URL remoteURL = new URL("http://" + urlResult.get("host") + ":" + urlResult.get("port") + urlResult.get("path") );
+				// Create a connection to remote server
+				HttpURLConnection proxyToServerCon = (HttpURLConnection)remoteURL.openConnection();
+				proxyToServerCon.setRequestProperty("Content-Type", 
+						"application/x-www-form-urlencoded");
+				proxyToServerCon.setRequestProperty("Content-Language", "en-US");  
+				proxyToServerCon.setUseCaches(false);
+				proxyToServerCon.setDoOutput(true);
+			
+				// Create Buffered Reader from remote Server
+				BufferedReader proxyToServerBR = new BufferedReader(new InputStreamReader(proxyToServerCon.getInputStream()));
+				
+
+				// Send success code to client
+				String line = "HTTP/1.0 200 OK\n" +
+						"Proxy-agent: ProxyServer/1.0\n" +
+						"\r\n";
+				proxyToClientBw.write(line);
+				
+				
+				// Read from input stream between proxy and remote server
+				while((line = proxyToServerBR.readLine()) != null){
+					// Send on data to client
+					proxyToClientBw.write(line);
+				}
+				
+				// Ensure all data is sent by this point
+				proxyToClientBw.flush();
+
+				// Close Down Resources
+				if(proxyToServerBR != null){
+					proxyToServerBR.close();
+				}
+
+			if(proxyToClientBw != null){
+				proxyToClientBw.close();
+			}
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+	}
+    
 
     private static void handleClientRequest(Socket socket_client){
         final byte[] Request = new byte[1024];
