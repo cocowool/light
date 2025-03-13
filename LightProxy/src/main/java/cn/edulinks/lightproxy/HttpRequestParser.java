@@ -6,15 +6,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class HttpRequestParser {
-    // 匹配请求行的正则表达式（GET /path HTTP/1.1）
     private static final Pattern REQUEST_LINE_PATTERN = 
         Pattern.compile("^(GET|POST|PUT|DELETE|HEAD|OPTIONS)\\s+(\\S+).*");
     
-    // 匹配绝对URL的正则表达式（http://host:port/path）
     private static final Pattern ABSOLUTE_URL_PATTERN = 
         Pattern.compile("^(https?)://([^:/?#]+)(?::(\\d+))?(/\\S*)?");
     
-    // 匹配Host头中的IPv6地址（如 [::1]:8080）
     private static final Pattern IPV6_HOST_PATTERN = 
         Pattern.compile("^\\[(.*)](?::(\\d+))?$");
 
@@ -32,8 +29,8 @@ public class HttpRequestParser {
     public static Map<String, String> parseRequest(String request) {
         Map<String, String> headers = new HashMap<>();
         Map<String, String> result = new HashMap<>();
-        result.put("port", "80"); // 默认端口
-        
+        result.put("port", "80"); // 默认HTTP端口
+
         String[] lines = request.split("\r?\n");
         String path = "";
 
@@ -59,10 +56,11 @@ public class HttpRequestParser {
         // 尝试从绝对URL解析主机信息
         Matcher urlMatcher = ABSOLUTE_URL_PATTERN.matcher(path);
         if (urlMatcher.find()) {
+            String protocol = urlMatcher.group(1);
             result.put("host", urlMatcher.group(2));
-            if (urlMatcher.group(3) != null) {
-                result.put("port", urlMatcher.group(3));
-            }
+            // 根据协议设置默认端口
+            String defaultPort = "https".equalsIgnoreCase(protocol) ? "443" : "80";
+            result.put("port", urlMatcher.group(3) != null ? urlMatcher.group(3) : defaultPort);
             result.put("path", urlMatcher.group(4) != null ? urlMatcher.group(4) : "/");
             return result;
         }
@@ -70,10 +68,10 @@ public class HttpRequestParser {
         // 从Host头解析主机信息
         String hostHeader = headers.get("Host");
         if (hostHeader != null && !hostHeader.isEmpty()) {
-            // 处理IPv6地址格式
             Matcher ipv6Matcher = IPV6_HOST_PATTERN.matcher(hostHeader);
             if (ipv6Matcher.find()) {
-                result.put("host", "[" + ipv6Matcher.group(1) + "]");
+                // 修复：直接使用提取的IPv6地址（无需额外添加方括号）
+                result.put("host", ipv6Matcher.group(1));
                 if (ipv6Matcher.group(2) != null) {
                     result.put("port", ipv6Matcher.group(2));
                 }
