@@ -9,9 +9,11 @@ public class HttpRequestParser {
     private static final Pattern REQUEST_LINE_PATTERN = 
         Pattern.compile("^(GET|POST|PUT|DELETE|HEAD|OPTIONS)\\s+(\\S+).*");
     
+
     private static final Pattern ABSOLUTE_URL_PATTERN = 
         Pattern.compile("^(https?)://([^:/?#]+)(?::(\\d+))?(/\\S*)?");
     
+        
     private static final Pattern IPV6_HOST_PATTERN = 
         Pattern.compile("^\\[(.*)](?::(\\d+))?$");
 
