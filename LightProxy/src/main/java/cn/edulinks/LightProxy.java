@@ -121,7 +121,7 @@ public class LightProxy implements Runnable {
 //            }
 
             //解析目标主机和端口
-            String host = headers.getOrDefault("Host", "www.edulinks.cn").split(":")[0];
+            String host = headers.getOrDefault("Host", "www.edulinks.cn").split(":")[0].trim();
             int port = 80;
             if (headers.containsKey("Host") && headers.get("Host").contains(":")) {
                 try{
@@ -178,6 +178,17 @@ public class LightProxy implements Runnable {
             clientWriter.flush();
 
         } catch (IOException e) {
+
+            e.printStackTrace();
+            sendErrorResponse(clientWriter, 502, "Bad Gateway!");
+        }
+    }
+
+    private static void sendErrorResponse(BufferedWriter writer, int code, String message){
+        try{
+            writer.write("HTTP/1.1 " + code + " " + message + "\r\n\r\n");
+            writer.flush();
+        }catch(IOException e){
             e.printStackTrace();
         }
     }
