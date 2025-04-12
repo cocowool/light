@@ -61,6 +61,37 @@ public class LightProxy implements Runnable {
         }
     }
 
+    /**
+     * 2025-04-12 根据DeepSeek建议，解析用户请求细节，判断长度
+     * @param socket_client
+     */
+    private static void parseRequest(Socket socket_client) {
+        try{
+            InputStream clientInput = socket_client.getInputStream();
+
+            BufferedReader proxyToClientBr = new BufferedReader(new InputStreamReader(clientInput));
+            BufferedWriter proxyToClientBw = new BufferedWriter(new OutputStreamWriter(socket_client.getOutputStream()));
+
+            //解析请求头
+            String requestLine = proxyToClientBr.readLine();
+            if( requestLine == null) return;
+
+            //提取请求方法、路径、协议、主机、端口
+            String[] requestParts = requestLine.split(" ");
+            if( requestParts.length < 3 ) return;
+
+        }catch (Exception e){
+            System.out.println("Parse Request Error!");
+            e.printStackTrace();
+        }finally {
+            try{
+                socket_client.close();
+            }catch (IOException e){
+                e.printStackTrace();
+            }
+        }
+    }
+
     private static void handleRequest(Socket socket_client) {
         BufferedReader proxyToClientBr = null;
         BufferedWriter proxyToClientBw = null;
