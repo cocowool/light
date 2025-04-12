@@ -133,7 +133,7 @@ public class LightProxy implements Runnable {
             }
 
             // 转发请求到目标服务器
-            forwardRequest(method, protocol, host, port, path, headers, body.toString(), proxyToClientBw);
+            forwardRequest(method, protocol, host, port, path, headers, body, proxyToClientBw);
         }catch (Exception e){
             System.out.println("Parse Request Error!");
             e.printStackTrace();
@@ -164,7 +164,7 @@ public class LightProxy implements Runnable {
             requestBuilder.append("\r\n");
 
 
-            System.out.println("Request body: " + requestBuilder.toString());
+            System.out.println("Request body: " + requestBuilder);
 
             // 发送请求头和请求体
             targetOutput.write(requestBuilder.toString().getBytes());
@@ -181,7 +181,6 @@ public class LightProxy implements Runnable {
             clientWriter.flush();
 
         } catch (IOException e) {
-
             e.printStackTrace();
             sendErrorResponse(clientWriter, 502, "Bad Gateway!");
         }
