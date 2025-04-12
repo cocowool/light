@@ -84,9 +84,9 @@ public class LightProxy implements Runnable {
             //提取请求方法、路径、协议、主机、端口
             String[] requestParts = requestLine.split(" ");
             if( requestParts.length < 3 ) return;
-            String method = requestParts[0];
-            String path = requestParts[1];
-            String protocol = requestParts[2];
+            String method = requestParts[0].trim();
+            String path = requestParts[1].trim();
+            String protocol = requestParts[2].trim();
 
             //读取请求头
             Map<String, String> headers = new HashMap<>();
@@ -114,7 +114,12 @@ public class LightProxy implements Runnable {
             String host = headers.getOrDefault("Host", "www.edulinks.cn").split(":")[0];
             int port = 80;
             if (headers.containsKey("Host") && headers.get("Host").contains(":")) {
-                port = Integer.parseInt(headers.get("Host").split(":")[1]);
+                try{
+                    port = Integer.parseInt(headers.get("Host").split(":")[1].trim());
+                }catch (NumberFormatException e){
+                    System.out.println("Parse Port Error, use default port 80.");
+                    port = 80;
+                }
             }
 
             // 转发请求到目标服务器
