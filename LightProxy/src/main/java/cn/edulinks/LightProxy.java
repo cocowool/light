@@ -97,8 +97,9 @@ public class LightProxy implements Runnable {
                 String[] headerParts = headerLine.split(":",2);
                 if(headerParts.length == 2){
                     headers.put(headerParts[0], headerParts[1]);
+                    System.out.println(headerLine);
                     if( "Content-Length".equalsIgnoreCase(headerParts[0])){
-                        contentLength = Integer.parseInt(headerParts[1]);
+                        contentLength = Integer.parseInt(headerParts[1].trim());
                     }
                 }
             }
