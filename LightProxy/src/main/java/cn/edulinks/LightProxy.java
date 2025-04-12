@@ -1,45 +1,12 @@
-// import java.io.*;
-// import java.net.*;
-// import java.util.concurrent.*;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.URL;
-import java.net.HttpURLConnection;
+package cn.edulinks;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
+import java.net.*;
 import java.util.ArrayList;
-
-import java.util.regex.Pattern;
-
 import java.util.Map;
-// import HttpRequestParser;
 
-/**
- * 
- * 2024-11-14 对于telnet发起的简单http请求能够正常返回，不支持 postman 请求
- * 2024-11-22 已支持 Postman 发 http 请求，不能正常响应重复请求
- * 
- * @TODO 后续考虑使用 HttpClient 库 / 或者使用 Netty 
- * 
- * 问题：
- * 1. 不能持续响应一个客户端的连续请求
- * 
- */
-public class HttpProxyServer implements Runnable {
-    // private static final int THREAD_POOL_SIZE = 10;
-    // private static final ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
-
+public class LightProxy implements Runnable {
     private ServerSocket serverSocket;
-
     static ArrayList<Thread> servicingThreads;
 
     /**
@@ -47,17 +14,17 @@ public class HttpProxyServer implements Runnable {
      */
     private volatile boolean running = true;
 
-    public static void main(String[] args) {
-        HttpProxyServer hps = new HttpProxyServer();
+    public static void main(String[] args){
+        LightProxy hps = new LightProxy();
         hps.listen();
     }
 
-    public  HttpProxyServer(){
+    public LightProxy(){
         int port = 8080;
 
         servicingThreads = new ArrayList<>();
 
-		new Thread(this).start();	// Starts overriden run() method at bottom
+        new Thread(this).start();	// Starts overriden run() method at bottom
 
         try {
             serverSocket = new ServerSocket(port);
@@ -69,7 +36,6 @@ public class HttpProxyServer implements Runnable {
             e.printStackTrace();
             running = false;
         }
-
     }
 
     public void listen(){
@@ -84,7 +50,7 @@ public class HttpProxyServer implements Runnable {
                 servicingThreads.add(thread);
                 // Thread thread = new Thread( ()->handleClientRequest(socket_client) );
 
-                thread.start();    
+                thread.start();
             }catch(SocketException e){
                 System.out.println("Socket Error!");
             }catch(Exception e){
@@ -108,7 +74,7 @@ public class HttpProxyServer implements Runnable {
             System.out.println("Set timeout Error!");
             e.printStackTrace();
         }
-        
+
         try{
             // 解析请求方法和请求地址
             String requestString;
@@ -117,8 +83,8 @@ public class HttpProxyServer implements Runnable {
 
             // System.out.println("Reuest header: " + requestString);
 
-    		// Get the Request type
-    		// String request = requestString.substring(0,requestString.indexOf(' '));
+            // Get the Request type
+            // String request = requestString.substring(0,requestString.indexOf(' '));
             // System.out.println("Request url : " + request);
 
             while( (requestString = proxyToClientBr.readLine()) != null && !requestString.isEmpty()){
@@ -144,59 +110,58 @@ public class HttpProxyServer implements Runnable {
             System.out.println("Handle Request Error!");
             e.printStackTrace();
         }
-        
+
     }
 
     /**
      * 返回普通的HTTP请求
      * @param urlResult
      */
-	private static void sendResponseToClient(Map<String, String> urlResult, BufferedWriter proxyToClientBw){
+    private static void sendResponseToClient(Map<String, String> urlResult, BufferedWriter proxyToClientBw){
 
-		try{								
-				// Create the URL
-				URL remoteURL = new URL("http://" + urlResult.get("host") + ":" + urlResult.get("port") + urlResult.get("path") );
-				// Create a connection to remote server
-				HttpURLConnection proxyToServerCon = (HttpURLConnection)remoteURL.openConnection();
-				proxyToServerCon.setRequestProperty("Content-Type", 
-						"application/x-www-form-urlencoded");
-				proxyToServerCon.setRequestProperty("Content-Language", "en-US");  
-				proxyToServerCon.setUseCaches(false);
-				proxyToServerCon.setDoOutput(true);
-			
-				// Create Buffered Reader from remote Server
-				BufferedReader proxyToServerBR = new BufferedReader(new InputStreamReader(proxyToServerCon.getInputStream()));
-				
+        try{
+            // Create the URL
+            URL remoteURL = new URL("http://" + urlResult.get("host") + ":" + urlResult.get("port") + urlResult.get("path") );
+            // Create a connection to remote server
+            HttpURLConnection proxyToServerCon = (HttpURLConnection)remoteURL.openConnection();
+            proxyToServerCon.setRequestProperty("Content-Type",
+                    "application/x-www-form-urlencoded");
+            proxyToServerCon.setRequestProperty("Content-Language", "en-US");
+            proxyToServerCon.setUseCaches(false);
+            proxyToServerCon.setDoOutput(true);
 
-				// Send success code to client
-				String line = "HTTP/1.0 200 OK\n" +
-						"Proxy-agent: ProxyServer/1.0\n" +
-						"\r\n";
-				proxyToClientBw.write(line);
-				
-				
-				// Read from input stream between proxy and remote server
-				while((line = proxyToServerBR.readLine()) != null){
-					// Send on data to client
-					proxyToClientBw.write(line);
-				}
-				
-				// Ensure all data is sent by this point
-				proxyToClientBw.flush();
+            // Create Buffered Reader from remote Server
+            BufferedReader proxyToServerBR = new BufferedReader(new InputStreamReader(proxyToServerCon.getInputStream()));
 
-				// Close Down Resources
-				if(proxyToServerBR != null){
-					proxyToServerBR.close();
-				}
 
-			if(proxyToClientBw != null){
-				proxyToClientBw.close();
-			}
-		} catch (Exception e){
-			e.printStackTrace();
-		}
-	}
-    
+            // Send success code to client
+            String line = "HTTP/1.0 200 OK\n" +
+                    "Proxy-agent: ProxyServer/1.0\n" +
+                    "\r\n";
+            proxyToClientBw.write(line);
+
+
+            // Read from input stream between proxy and remote server
+            while((line = proxyToServerBR.readLine()) != null){
+                // Send on data to client
+                proxyToClientBw.write(line);
+            }
+
+            // Ensure all data is sent by this point
+            proxyToClientBw.flush();
+
+            // Close Down Resources
+            if(proxyToServerBR != null){
+                proxyToServerBR.close();
+            }
+
+            if(proxyToClientBw != null){
+                proxyToClientBw.close();
+            }
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+    }
 
     private static void handleClientRequest(Socket socket_client){
         final byte[] Request = new byte[1024];
@@ -264,7 +229,7 @@ public class HttpProxyServer implements Runnable {
                 // 先手工写死请求的远端地址，实际需要从用户请求中解析出来
                 if( requestHost == null){
                     requestHost = "www.edulinks.cn";
-                    requestPort = 80;    
+                    requestPort = 80;
                 }
 
                 proxySocket = new Socket(requestHost, requestPort);
@@ -277,7 +242,7 @@ public class HttpProxyServer implements Runnable {
                 // proxySocket.shutdownOutput();
 
                 int Bytes_Read;
-                try {    
+                try {
                     while ( (Bytes_Read = prxoyInputStream.read(Reply))!= -1){
                         System.out.println(Reply);
                         OutputStreamClient.write(Reply, 0, Bytes_Read);
@@ -305,8 +270,7 @@ public class HttpProxyServer implements Runnable {
     }
 
     @Override
-    public void run(){
+    public void run() {
         System.out.println("New thread is running ... ");
     }
 }
-

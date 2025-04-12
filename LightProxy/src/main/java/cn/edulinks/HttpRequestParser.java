@@ -1,4 +1,4 @@
-// package cn.edulinks.lightproxy;
+package cn.edulinks;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -6,20 +6,20 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class HttpRequestParser {
-    private static final Pattern REQUEST_LINE_PATTERN = 
-        Pattern.compile("^(GET|POST|PUT|DELETE|HEAD|OPTIONS)\\s+(\\S+).*");
-    
-    private static final Pattern ABSOLUTE_URL_PATTERN = 
-        Pattern.compile("^(https?)://([^:/?#]+)(?::(\\d+))?(/\\S*)?");
-    
-    private static final Pattern IPV6_HOST_PATTERN = 
-        Pattern.compile("^\\[(.*)](?::(\\d+))?$");
+    private static final Pattern REQUEST_LINE_PATTERN =
+            Pattern.compile("^(GET|POST|PUT|DELETE|HEAD|OPTIONS)\\s+(\\S+).*");
+
+    private static final Pattern ABSOLUTE_URL_PATTERN =
+            Pattern.compile("^(https?)://([^:/?#]+)(?::(\\d+))?(/\\S*)?");
+
+    private static final Pattern IPV6_HOST_PATTERN =
+            Pattern.compile("^\\[(.*)](?::(\\d+))?$");
 
     public static void main(String[] args) {
         String httpRequest = "GET /api/v1/users HTTP/1.1\r\n" +
                 "Host: example.com:8080\r\n" +
                 "User-Agent: test-client\r\n\r\n";
-        
+
         Map<String, String> result = parseRequest(httpRequest);
         System.out.println("Host: " + result.get("host"));
         System.out.println("Port: " + result.get("port"));
@@ -44,7 +44,7 @@ public class HttpRequestParser {
         for (int i = 1; i < lines.length; i++) {
             String line = lines[i].trim();
             if (line.isEmpty()) break;
-            
+
             int colonIndex = line.indexOf(':');
             if (colonIndex > 0) {
                 String key = line.substring(0, colonIndex).trim();
