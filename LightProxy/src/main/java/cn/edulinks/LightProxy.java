@@ -3,6 +3,7 @@ package cn.edulinks;
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 public class LightProxy implements Runnable {
@@ -45,7 +46,11 @@ public class LightProxy implements Runnable {
                 Socket socket_client = serverSocket.accept();
 
                 // Thread thread = new Thread( () ->handleClientRequest(socket_client) );
-                Thread thread = new Thread( () ->handleRequest(socket_client) );
+
+
+                // Thread thread = new Thread( () ->handleRequest(socket_client) );
+
+                Thread thread = new Thread( () ->parseRequest(socket_client) );
 
                 servicingThreads.add(thread);
                 // Thread thread = new Thread( ()->handleClientRequest(socket_client) );
@@ -79,7 +84,41 @@ public class LightProxy implements Runnable {
             //提取请求方法、路径、协议、主机、端口
             String[] requestParts = requestLine.split(" ");
             if( requestParts.length < 3 ) return;
+            String method = requestParts[0];
+            String path = requestParts[1];
+            String protocol = requestParts[2];
 
+            //读取请求头
+            Map<String, String> headers = new HashMap<>();
+            String headerLine;
+            int contentLength = 0;
+            while( (headerLine = proxyToClientBr.readLine()) != null && !headerLine.isEmpty() ){
+                String[] headerParts = headerLine.split(":",2);
+                if(headerParts.length == 2){
+                    headers.put(headerParts[0], headerParts[1]);
+                    if( "Content-Length".equalsIgnoreCase(headerParts[0])){
+                        contentLength = Integer.parseInt(headerParts[1]);
+                    }
+                }
+            }
+
+            //读取请求题（如果有）
+            StringBuilder body = new StringBuilder();
+            if( contentLength > 0){
+                char[] buffer = new char[contentLength];
+                int bytesRead = proxyToClientBr.read(buffer, 0, contentLength);
+                body.append(buffer,0, bytesRead);
+            }
+
+            //解析目标主机和端口
+            String host = headers.getOrDefault("Host", "www.edulinks.cn").split(":")[0];
+            int port = 80;
+            if (headers.containsKey("Host") && headers.get("Host").contains(":")) {
+                port = Integer.parseInt(headers.get("Host").split(":")[1]);
+            }
+
+            // 转发请求到目标服务器
+            forwardRequest(method, protocol, host, port, path, headers, body.toString(), proxyToClientBw);
         }catch (Exception e){
             System.out.println("Parse Request Error!");
             e.printStackTrace();
@@ -89,6 +128,40 @@ public class LightProxy implements Runnable {
             }catch (IOException e){
                 e.printStackTrace();
             }
+        }
+    }
+
+    private static void forwardRequest(String method, String protocol, String host, int port, String path,
+                                       Map<String, String> headers, String body, BufferedWriter clientWriter) {
+        System.out.println("Try to open Host: " + host );
+        try (Socket targetSocket = new Socket(host, port);
+             OutputStream targetOutput = targetSocket.getOutputStream();
+             BufferedReader targetReader = new BufferedReader(new InputStreamReader(targetSocket.getInputStream()))) {
+
+            // 构建请求头
+            StringBuilder requestBuilder = new StringBuilder();
+            requestBuilder.append(method).append(" ").append(path).append(" ").append(protocol).append("\r\n");
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                requestBuilder.append(entry.getKey()).append(": ").append(entry.getValue()).append("\r\n");
+            }
+            requestBuilder.append("\r\n");
+
+            // 发送请求头和请求体
+            targetOutput.write(requestBuilder.toString().getBytes());
+            if (!body.isEmpty()) {
+                targetOutput.write(body.getBytes());
+            }
+            targetOutput.flush();
+
+            // 读取目标服务器响应并转发给客户端
+            String responseLine;
+            while ((responseLine = targetReader.readLine()) != null) {
+                clientWriter.write(responseLine + "\r\n");
+            }
+            clientWriter.flush();
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
