@@ -163,6 +163,9 @@ public class LightProxy implements Runnable {
             }
             requestBuilder.append("\r\n");
 
+
+            System.out.println("Request body: " + requestBuilder.toString());
+
             // 发送请求头和请求体
             targetOutput.write(requestBuilder.toString().getBytes());
             if (!body.isEmpty()) {
