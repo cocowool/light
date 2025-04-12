@@ -148,7 +148,9 @@ public class LightProxy implements Runnable {
 
     private static void forwardRequest(String method, String protocol, String host, int port, String path,
                                        Map<String, String> headers, String body, BufferedWriter clientWriter) {
-        System.out.println("Try to open Host: " + host );
+        host = host.trim();
+        System.out.println("Try to open Host:[" + host + "] , Port:[" + port + "]");
+
         try (Socket targetSocket = new Socket(host, port);
              OutputStream targetOutput = targetSocket.getOutputStream();
              BufferedReader targetReader = new BufferedReader(new InputStreamReader(targetSocket.getInputStream()))) {
