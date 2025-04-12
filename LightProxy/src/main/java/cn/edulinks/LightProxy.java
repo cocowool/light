@@ -2,6 +2,7 @@ package cn.edulinks;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -102,13 +103,22 @@ public class LightProxy implements Runnable {
                 }
             }
 
-            //读取请求题（如果有）
-            StringBuilder body = new StringBuilder();
-            if( contentLength > 0){
-                char[] buffer = new char[contentLength];
-                int bytesRead = proxyToClientBr.read(buffer, 0, contentLength);
-                body.append(buffer,0, bytesRead);
+            //读取请求体（如果有）
+            byte[] bodyBytes = new byte[contentLength];
+            int bytesRead = 0;
+            while(bytesRead < contentLength){
+                int read = clientInput.read(bodyBytes, bytesRead, contentLength - bytesRead);
+                if ( read == -1)    break;
+                bytesRead += read;
             }
+            String body = new String(bodyBytes, StandardCharsets.UTF_8);    //@按实际编码解析
+
+//            StringBuilder body = new StringBuilder();
+//            if( contentLength > 0){
+//                char[] buffer = new char[contentLength];
+//                int bytesRead = proxyToClientBr.read(buffer, 0, contentLength);
+//                body.append(buffer,0, bytesRead);
+//            }
 
             //解析目标主机和端口
             String host = headers.getOrDefault("Host", "www.edulinks.cn").split(":")[0];
