@@ -12,7 +12,7 @@ public class LightProxy implements Runnable {
     static ArrayList<Thread> servicingThreads;
 
     /**
-     * 后续用作信号量
+     * #TODO 后续用作信号量
      */
     private volatile boolean running = true;
 
@@ -69,7 +69,7 @@ public class LightProxy implements Runnable {
 
     /**
      * 2025-04-12 根据DeepSeek建议，解析用户请求细节，判断长度
-     * @param socket_client
+     * @param socket_client 处理用户请求的Socket连接符
      */
     private static void parseRequest(Socket socket_client) {
         try{
@@ -129,7 +129,6 @@ public class LightProxy implements Runnable {
                     port = Integer.parseInt(headers.get("Host").split(":")[1].trim());
                 }catch (NumberFormatException e){
                     System.out.println("Parse Port Error, use default port 80.");
-                    port = 80;
                 }
             }
 
