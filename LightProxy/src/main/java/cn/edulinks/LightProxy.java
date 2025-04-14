@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+//import java.net.http.HttpClient;
 
 public class LightProxy implements Runnable {
     private ServerSocket serverSocket;
@@ -146,18 +147,36 @@ public class LightProxy implements Runnable {
         }
     }
 
+    /**
+     *
+     * @param method
+     * @param protocol
+     * @param host
+     * @param port
+     * @param path
+     * @param headers
+     * @param body
+     * @param clientWriter
+     * @param clientSocket
+     */
     private static void forwardRequest(String method, String protocol, String host, int port, String path,
-                                       Map<String, String> headers, String body, BufferedWriter clientWriter) {
+                                       Map<String, String> headers, String body, BufferedWriter clientWriter, Socket clientSocket) {
         host = host.trim();
         System.out.println("Try to open Host:[" + host + "] , Port:[" + port + "]");
 
         try (Socket targetSocket = new Socket(host, port);
              OutputStream targetOutput = targetSocket.getOutputStream();
-             BufferedReader targetReader = new BufferedReader(new InputStreamReader(targetSocket.getInputStream()))) {
+             InputStream targetInput = targetSocket.getInputStream();
+             OutputStream clientOutput = clientSocket.getOutputStream() ) {
 
             // 构建请求头
             StringBuilder requestBuilder = new StringBuilder();
             requestBuilder.append(method).append(" ").append(path).append(" ").append(protocol).append("\r\n");
+            // #todo 强制添加 Host 头
+
+            // 关闭持久连接
+            headers.put("Connection", "Close");
+
             for (Map.Entry<String, String> entry : headers.entrySet()) {
                 requestBuilder.append(entry.getKey()).append(": ").append(entry.getValue()).append("\r\n");
             }
@@ -167,19 +186,25 @@ public class LightProxy implements Runnable {
             System.out.println("Request body: " + requestBuilder);
 
             // 发送请求头和请求体
-            targetOutput.write(requestBuilder.toString().getBytes());
+            targetOutput.write(requestBuilder.toString().getBytes(StandardCharsets.UTF_8));
             if (!body.isEmpty()) {
-                targetOutput.write(body.getBytes());
+                targetOutput.write(body.getBytes(StandardCharsets.UTF_8));
             }
             targetOutput.flush();
 
+            System.out.println("Try to send message back to client.");
+
             // 读取目标服务器响应并转发给客户端
+            BufferedReader headerReader = new BufferedReader(new InputStreamReader(targetInput));
+
+
             String responseLine;
             while ((responseLine = targetReader.readLine()) != null) {
                 clientWriter.write(responseLine + "\r\n");
             }
             clientWriter.flush();
 
+            System.out.println("Send to client end!");
         } catch (IOException e) {
             e.printStackTrace();
             sendErrorResponse(clientWriter, 502, "Bad Gateway!");
