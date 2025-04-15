@@ -134,7 +134,7 @@ public class LightProxy implements Runnable {
             }
 
             // 转发请求到目标服务器
-            forwardRequest(method, protocol, host, port, path, headers, body, proxyToClientBw);
+            forwardRequest(method, protocol, host, port, path, headers, body, socket_client);
         }catch (Exception e){
             System.out.println("Parse Request Error!");
             e.printStackTrace();
@@ -160,7 +160,7 @@ public class LightProxy implements Runnable {
      * @param clientSocket
      */
     private static void forwardRequest(String method, String protocol, String host, int port, String path,
-                                       Map<String, String> headers, String body, BufferedWriter clientWriter, Socket clientSocket) {
+                                       Map<String, String> headers, String body, Socket clientSocket) {
         host = host.trim();
         System.out.println("Try to open Host:[" + host + "] , Port:[" + port + "]");
 
@@ -196,25 +196,59 @@ public class LightProxy implements Runnable {
 
             // 读取目标服务器响应并转发给客户端
             BufferedReader headerReader = new BufferedReader(new InputStreamReader(targetInput));
-
-
-            String responseLine;
-            while ((responseLine = targetReader.readLine()) != null) {
-                clientWriter.write(responseLine + "\r\n");
+            String statusLine = headerReader.readLine();
+            if(statusLine == null){
+                sendErrorResponse(clientOutput, 502, "Empty response from upstream.");
+                return;
             }
-            clientWriter.flush();
+
+            // 转发状态行
+            clientOutput.write( (statusLine + "\r\n").getBytes(StandardCharsets.UTF_8) );
+
+            //读取并转发响应头
+            String headerLine;
+            while( (headerLine = headerReader.readLine()) != null ){
+                if(headerLine.isEmpty()) break;
+                clientOutput.write((headerLine + "\r\n").getBytes(StandardCharsets.UTF_8));
+            }
+            clientOutput.write("\r\n".getBytes());
+
+            // 使用二进制方式传输响应体
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+            while( (bytesRead = targetInput.read(buffer)) != -1 ){
+                clientOutput.write(buffer, 0 , bytesRead);
+            }
+            clientOutput.flush();
 
             System.out.println("Send to client end!");
-        } catch (IOException e) {
-            e.printStackTrace();
-            sendErrorResponse(clientWriter, 502, "Bad Gateway!");
+        } catch(ConnectException e){
+            // 从Socket重新获取输出流 (关键修复)
+            try {
+                OutputStream clientOutput = clientSocket.getOutputStream();
+                sendErrorResponse(clientOutput, 504, "Gateway Timeout");
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        } catch(IOException e) {
+            try {
+                OutputStream clientOutput = clientSocket.getOutputStream();
+                sendErrorResponse(clientOutput, 502, "Bad Gateway");
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
         }
     }
 
-    private static void sendErrorResponse(BufferedWriter writer, int code, String message){
+    private static void sendErrorResponse(OutputStream clientOutput, int code, String message){
         try{
-            writer.write("HTTP/1.1 " + code + " " + message + "\r\n\r\n");
-            writer.flush();
+            String response = "HTTP/1.1 " + code + " " + message + "\r\n\r\n" +
+                    "Content-Type: text/plain\r\n" +
+                    "Connection: close\r\n\r\n" +
+                    "Proxy Error: " + message;
+
+            clientOutput.write(response.getBytes(StandardCharsets.UTF_8));
+            clientOutput.flush();
         }catch(IOException e){
             e.printStackTrace();
         }
