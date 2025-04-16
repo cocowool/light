@@ -169,6 +169,9 @@ public class LightProxy implements Runnable {
              InputStream targetInput = targetSocket.getInputStream();
              OutputStream clientOutput = clientSocket.getOutputStream() ) {
 
+            // 以字节流方式处理请求头
+//            byte[] buffer = new byte[8192];
+
             // 构建请求头
             StringBuilder requestBuilder = new StringBuilder();
             requestBuilder.append(method).append(" ").append(path).append(" ").append(protocol).append("\r\n");
