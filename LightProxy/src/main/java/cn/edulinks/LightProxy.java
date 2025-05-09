@@ -158,6 +158,8 @@ public class LightProxy implements Runnable {
      * @param body
      * @param clientWriter
      * @param clientSocket
+     *
+     * # 测试问题：Firefox配置代理后，不能正常返回 http://www.edulinks.cn 的GET请求
      */
     private static void forwardRequest(String method, String protocol, String host, int port, String path,
                                        Map<String, String> headers, String body, Socket clientSocket) {
