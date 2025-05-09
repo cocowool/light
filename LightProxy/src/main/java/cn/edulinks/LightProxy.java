@@ -48,12 +48,9 @@ public class LightProxy implements Runnable {
                 Socket socket_client = serverSocket.accept();
 
                 // Thread thread = new Thread( () ->handleClientRequest(socket_client) );
-
-
                 // Thread thread = new Thread( () ->handleRequest(socket_client) );
 
                 Thread thread = new Thread( () ->parseRequest(socket_client) );
-
                 servicingThreads.add(thread);
                 // Thread thread = new Thread( ()->handleClientRequest(socket_client) );
 
@@ -75,7 +72,6 @@ public class LightProxy implements Runnable {
     private static void parseRequest(Socket socket_client) {
         try{
             InputStream clientInput = socket_client.getInputStream();
-
             BufferedReader proxyToClientBr = new BufferedReader(new InputStreamReader(clientInput));
             BufferedWriter proxyToClientBw = new BufferedWriter(new OutputStreamWriter(socket_client.getOutputStream()));
 
