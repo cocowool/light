@@ -197,8 +197,32 @@ public class LightProxy implements Runnable {
             System.out.println("Try to send message back to client.");
 
             //使用字节流方式读取状态行和头信息
+            ByteArrayOutputStream headerBuffer = new ByteArrayOutputStream();
+            int b;
+            boolean headerEnd = false;
+            while( (b = targetInput.read()) != -1 ){
+//                System.out.println("Read response from remote server via byte stream.");
+                headerBuffer.write(b);
+                if(headerBuffer.size() >= 4){
+                    byte[] lastFour = new byte[4];
+                    System.arraycopy(headerBuffer.toByteArray(), headerBuffer.size() - 4, lastFour, 0, 4);
+                    if (lastFour[0] == '\r' && lastFour[1] == '\n' && lastFour[2] == '\r' && lastFour[3] == '\n') {
+                        headerEnd = true;
+                        break;
+                    }
+                }
+            }
 
+            if (!headerEnd) {
+                sendErrorResponse(clientOutput, 502, "Incomplete headers");
+                return;
+            }
 
+            String responseHeaders = new String(headerBuffer.toByteArray(), StandardCharsets.UTF_8);
+            clientOutput.write(responseHeaders.getBytes(StandardCharsets.UTF_8));
+
+            /**
+             * 2025-05-14 调试注释
             // 读取目标服务器响应并转发给客户端
             BufferedReader headerReader = new BufferedReader(new InputStreamReader(targetInput));
             String statusLine = headerReader.readLine();
@@ -218,6 +242,7 @@ public class LightProxy implements Runnable {
             }
             clientOutput.write("\r\n".getBytes());
             System.out.println("Send response header to client.");
+             **/
 
             // 使用二进制方式传输响应体
             byte[] buffer = new byte[8192];
