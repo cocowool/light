@@ -176,7 +176,7 @@ public class LightProxy implements Runnable {
             // #todo 强制添加 Host 头
 
             // 关闭持久连接
-            headers.put("Connection", "Close");
+//            headers.put("Connection", "Close");
 
             for (Map.Entry<String, String> entry : headers.entrySet()) {
                 requestBuilder.append(entry.getKey()).append(": ").append(entry.getValue()).append("\r\n");
@@ -193,7 +193,11 @@ public class LightProxy implements Runnable {
             }
             targetOutput.flush();
 
+            System.out.println("Send request to remote server finished!");
             System.out.println("Try to send message back to client.");
+
+            //使用字节流方式读取状态行和头信息
+
 
             // 读取目标服务器响应并转发给客户端
             BufferedReader headerReader = new BufferedReader(new InputStreamReader(targetInput));
@@ -213,11 +217,13 @@ public class LightProxy implements Runnable {
                 clientOutput.write((headerLine + "\r\n").getBytes(StandardCharsets.UTF_8));
             }
             clientOutput.write("\r\n".getBytes());
+            System.out.println("Send response header to client.");
 
             // 使用二进制方式传输响应体
             byte[] buffer = new byte[8192];
             int bytesRead;
             while( (bytesRead = targetInput.read(buffer)) != -1 ){
+                System.out.println("Read remote response and send back to client.");
                 clientOutput.write(buffer, 0 , bytesRead);
             }
             clientOutput.flush();
