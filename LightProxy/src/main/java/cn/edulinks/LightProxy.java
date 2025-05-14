@@ -94,7 +94,7 @@ public class LightProxy implements Runnable {
                 String[] headerParts = headerLine.split(":",2);
                 if(headerParts.length == 2){
                     headers.put(headerParts[0], headerParts[1]);
-                    System.out.println(headerLine);
+                    //System.out.println(headerLine);
                     if( "Content-Length".equalsIgnoreCase(headerParts[0])){
                         contentLength = Integer.parseInt(headerParts[1].trim());
                     }
@@ -184,7 +184,7 @@ public class LightProxy implements Runnable {
             requestBuilder.append("\r\n");
 
 
-            System.out.println("Request body: " + requestBuilder);
+//            System.out.println("Request body: " + requestBuilder);
 
             // 发送请求头和请求体
             targetOutput.write(requestBuilder.toString().getBytes(StandardCharsets.UTF_8));
