@@ -175,6 +175,11 @@ public class LightProxy implements Runnable {
             requestBuilder.append(method).append(" ").append(path).append(" ").append(protocol).append("\r\n");
             // #todo 强制添加 Host 头
 
+            // 检查客户端请求是否包含长链接
+            boolean clientKeepAlive = headers.getOrDefault("Connection", "").equalsIgnoreCase("keep-alive");
+            // 根据请求头情况设置转发头
+            headers.put("Connection", clientKeepAlive?"keep-alive":"close");
+
             // 关闭持久连接
 //            headers.put("Connection", "Close");
 
