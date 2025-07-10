@@ -180,9 +180,6 @@ public class LightProxy implements Runnable {
             // 根据请求头情况设置转发头
             headers.put("Connection", clientKeepAlive?"keep-alive":"close");
 
-            // 关闭持久连接
-//            headers.put("Connection", "Close");
-
             for (Map.Entry<String, String> entry : headers.entrySet()) {
                 requestBuilder.append(entry.getKey()).append(": ").append(entry.getValue()).append("\r\n");
             }
@@ -223,7 +220,10 @@ public class LightProxy implements Runnable {
                 return;
             }
 
+
             String responseHeaders = new String(headerBuffer.toByteArray(), StandardCharsets.UTF_8);
+            // DEBUG 打印获取到的响应头信息
+            System.out.println(responseHeaders);
             clientOutput.write(responseHeaders.getBytes(StandardCharsets.UTF_8));
 
             /**
