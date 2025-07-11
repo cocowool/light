@@ -203,33 +203,77 @@ public class LightProxy implements Runnable {
             System.out.println("The Status Line:");
             System.out.println(statusLine);
 
-            ByteArrayOutputStream headerBuffer = new ByteArrayOutputStream();
-            int b;
-            boolean headerEnd = false;
-            while( (b = targetInput.read()) != -1 ){
-//                System.out.println("Read response from remote server via byte stream.");
-                headerBuffer.write(b);
-                if(headerBuffer.size() >= 4){
-                    byte[] lastFour = new byte[4];
-                    System.arraycopy(headerBuffer.toByteArray(), headerBuffer.size() - 4, lastFour, 0, 4);
-                    if (lastFour[0] == '\r' && lastFour[1] == '\n' && lastFour[2] == '\r' && lastFour[3] == '\n') {
-                        headerEnd = true;
-                        break;
-                    }
+            if ( statusLine == null ){
+                sendErrorResponse(clientOutput, 502, "Empty response");
+            }
+
+            // 解析状态码
+            int statusCode = parseStatusCode(statusLine);
+
+            //转发状态行
+            clientOutput.write( (statusLine + "\r\n").getBytes(StandardCharsets.UTF_8) );
+
+            // 读取并转发响应头
+            Map<String, String> responseHeaders = new HashMap<>();
+            String headerLine;
+            while( !(headerLine = readLine(targetInput)).isEmpty() ){
+                int columIndex = headerLine.indexOf(":");
+                if ( columIndex > 0) {
+                    String key = headerLine.substring(0, columIndex).trim();
+                    String value = headerLine.substring(columIndex + 1).trim();
+                    responseHeaders.put(key, value);
                 }
+                clientOutput.write( (headerLine + "\r\n").getBytes(StandardCharsets.UTF_8) );
+            }
+            //结束响应头
+            clientOutput.write( "\r\n".getBytes() );
+
+            // 处理特殊头部
+
+            // 基于状态码的差异化处理
+            if ( statusCode >= 400 ){
+                
+            }else{
+                // 正常转发响应体
+                // 使用二进制方式传输响应体
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while( (bytesRead = targetInput.read(buffer)) != -1 ){
+                    System.out.println("Read remote response and send back to client.");
+                    clientOutput.write(buffer, 0 , bytesRead);
+                }
+                clientOutput.flush();
             }
 
-            if (!headerEnd) {
-                sendErrorResponse(clientOutput, 502, "Incomplete headers");
-                return;
-            }
+//            clientOutput.flush();
 
-            String responseHeaders = new String(headerBuffer.toByteArray(), StandardCharsets.UTF_8);
-            // DEBUG 打印获取到的响应头信息
-            System.out.println("Response Header start:");
-            System.out.println(responseHeaders);
-            System.out.println("Response Header End!");
-            clientOutput.write(responseHeaders.getBytes(StandardCharsets.UTF_8));
+//            ByteArrayOutputStream headerBuffer = new ByteArrayOutputStream();
+//            int b;
+//            boolean headerEnd = false;
+//            while( (b = targetInput.read()) != -1 ){
+////                System.out.println("Read response from remote server via byte stream.");
+//                headerBuffer.write(b);
+//                if(headerBuffer.size() >= 4){
+//                    byte[] lastFour = new byte[4];
+//                    System.arraycopy(headerBuffer.toByteArray(), headerBuffer.size() - 4, lastFour, 0, 4);
+//                    if (lastFour[0] == '\r' && lastFour[1] == '\n' && lastFour[2] == '\r' && lastFour[3] == '\n') {
+//                        headerEnd = true;
+//                        break;
+//                    }
+//                }
+//            }
+//
+//            if (!headerEnd) {
+//                sendErrorResponse(clientOutput, 502, "Incomplete headers");
+//                return;
+//            }
+//
+//            String responseHeaders = new String(headerBuffer.toByteArray(), StandardCharsets.UTF_8);
+//            // DEBUG 打印获取到的响应头信息
+//            System.out.println("Response Header start:");
+//            System.out.println(responseHeaders);
+//            System.out.println("Response Header End!");
+//            clientOutput.write(responseHeaders.getBytes(StandardCharsets.UTF_8));
 
             /**
              * 2025-05-14 调试注释
@@ -253,15 +297,6 @@ public class LightProxy implements Runnable {
             clientOutput.write("\r\n".getBytes());
             System.out.println("Send response header to client.");
              **/
-
-            // 使用二进制方式传输响应体
-            byte[] buffer = new byte[8192];
-            int bytesRead;
-            while( (bytesRead = targetInput.read(buffer)) != -1 ){
-                System.out.println("Read remote response and send back to client.");
-                clientOutput.write(buffer, 0 , bytesRead);
-            }
-            clientOutput.flush();
 
             System.out.println("Send to client end!");
         } catch(ConnectException e){
@@ -305,6 +340,25 @@ public class LightProxy implements Runnable {
             baos.write(b);
         }
         return (baos.size() > 0) ?  new String(baos.toByteArray(), StandardCharsets.UTF_8) : null;
+    }
+
+    /**
+     * 解析状态行
+     *
+     * @param String statusLine
+     * @return int statusCode
+     */
+    private static int parseStatusCode(String statusLine){
+        String[] parts = statusLine.split(" ");
+        if( parts.length >= 2){
+            try{
+                return Integer.parseInt(parts[1]);
+            }catch (NumberFormatException e){
+                return 500;
+            }
+        }
+
+        return 500;
     }
 
     private static void sendErrorResponse(OutputStream clientOutput, int code, String message){
