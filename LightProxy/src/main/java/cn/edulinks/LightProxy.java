@@ -200,7 +200,8 @@ public class LightProxy implements Runnable {
 
             // 使用字节流方式读取状态行和头信息
             String statusLine = readLine(targetInput);
-
+            System.out.println("The Status Line:");
+            System.out.println(statusLine);
 
             ByteArrayOutputStream headerBuffer = new ByteArrayOutputStream();
             int b;
@@ -285,13 +286,25 @@ public class LightProxy implements Runnable {
      * 逐行读取远程响应的内容
      *
      * @param in
-     * @return
+     * @return String
      * @throws IOException
      */
     private static String readLine(InputStream in) throws IOException {
-        
-
-        return null;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        int b;
+        while ((b = in.read()) != -1) {
+            if (b == '\r') {
+                // 跳过后续的\n
+                in.mark(1);
+                int next = in.read();
+                if (next != '\n') in.reset();
+                break;
+            } else if (b == '\n') {
+                break;
+            }
+            baos.write(b);
+        }
+        return (baos.size() > 0) ?  new String(baos.toByteArray(), StandardCharsets.UTF_8) : null;
     }
 
     private static void sendErrorResponse(OutputStream clientOutput, int code, String message){
