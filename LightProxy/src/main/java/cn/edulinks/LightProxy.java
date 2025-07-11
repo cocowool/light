@@ -232,7 +232,14 @@ public class LightProxy implements Runnable {
 
             // 基于状态码的差异化处理
             if ( statusCode >= 400 ){
-                
+
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while( (bytesRead = targetInput.read(buffer)) != -1 ){
+                    System.out.println("Read remote response and send back to client.");
+                    clientOutput.write(buffer, 0 , bytesRead);
+                    clientOutput.flush();
+                }
             }else{
                 // 正常转发响应体
                 // 使用二进制方式传输响应体
@@ -241,8 +248,8 @@ public class LightProxy implements Runnable {
                 while( (bytesRead = targetInput.read(buffer)) != -1 ){
                     System.out.println("Read remote response and send back to client.");
                     clientOutput.write(buffer, 0 , bytesRead);
+                    clientOutput.flush();
                 }
-                clientOutput.flush();
             }
 
 //            clientOutput.flush();
@@ -359,6 +366,12 @@ public class LightProxy implements Runnable {
         }
 
         return 500;
+    }
+
+    private static void handleErrorResponse(InputStream targetInput, OutputStream clientOutput, int statusCode, Map<String, String> headers) throws  IOException{
+        System.out.println("Handle error response !");
+
+
     }
 
     private static void sendErrorResponse(OutputStream clientOutput, int code, String message){
