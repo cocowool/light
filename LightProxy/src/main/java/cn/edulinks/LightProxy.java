@@ -198,7 +198,10 @@ public class LightProxy implements Runnable {
             System.out.println("Send request to remote server finished!");
             System.out.println("Try to send message back to client.");
 
-            //使用字节流方式读取状态行和头信息
+            // 使用字节流方式读取状态行和头信息
+            String statusLine = readLine(targetInput);
+
+
             ByteArrayOutputStream headerBuffer = new ByteArrayOutputStream();
             int b;
             boolean headerEnd = false;
@@ -276,6 +279,19 @@ public class LightProxy implements Runnable {
                 ex.printStackTrace();
             }
         }
+    }
+
+    /**
+     * 逐行读取远程响应的内容
+     *
+     * @param in
+     * @return
+     * @throws IOException
+     */
+    private static String readLine(InputStream in) throws IOException {
+        
+
+        return null;
     }
 
     private static void sendErrorResponse(OutputStream clientOutput, int code, String message){
