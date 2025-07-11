@@ -186,7 +186,7 @@ public class LightProxy implements Runnable {
             requestBuilder.append("\r\n");
 
 
-//            System.out.println("Request body: " + requestBuilder);
+            //System.out.println("Request body: " + requestBuilder);
 
             // 发送请求头和请求体
             targetOutput.write(requestBuilder.toString().getBytes(StandardCharsets.UTF_8));
@@ -220,10 +220,9 @@ public class LightProxy implements Runnable {
                 return;
             }
 
-
             String responseHeaders = new String(headerBuffer.toByteArray(), StandardCharsets.UTF_8);
             // DEBUG 打印获取到的响应头信息
-            System.out.print("Response Header start:");
+            System.out.println("Response Header start:");
             System.out.println(responseHeaders);
             System.out.println("Response Header End!");
             clientOutput.write(responseHeaders.getBytes(StandardCharsets.UTF_8));
