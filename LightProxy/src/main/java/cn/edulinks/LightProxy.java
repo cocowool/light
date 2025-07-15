@@ -180,6 +180,9 @@ public class LightProxy implements Runnable {
             StringBuilder requestBuilder = new StringBuilder();
             requestBuilder.append(method).append(" ").append(path).append(" ").append(protocol).append("\r\n");
             // #todo 强制添加 Host 头
+            if( ! headers.containsKey("Host") ){
+                headers.put("Host", host + ":" + port);
+            }
 
             // 检查客户端请求是否包含长链接
             boolean clientKeepAlive = headers.getOrDefault("Connection", "").equalsIgnoreCase("keep-alive");
@@ -233,6 +236,7 @@ public class LightProxy implements Runnable {
             }
             //结束响应头
             clientOutput.write( "\r\n".getBytes() );
+            clientOutput.flush();
 
             // 处理特殊头部
 
