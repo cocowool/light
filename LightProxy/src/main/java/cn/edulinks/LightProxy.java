@@ -164,8 +164,14 @@ public class LightProxy implements Runnable {
 
         try (Socket targetSocket = new Socket(host, port);
              OutputStream targetOutput = targetSocket.getOutputStream();
-             InputStream targetInput = targetSocket.getInputStream();
-             OutputStream clientOutput = clientSocket.getOutputStream() ) {
+             InputStream targetInput = targetSocket.getInputStream()
+              ) {
+
+            // 设置超时时间
+            targetSocket.setSoTimeout(5000);    //5秒读取超时
+            clientSocket.setSoTimeout(10000);   //10秒客户端超时
+
+            OutputStream clientOutput = clientSocket.getOutputStream();
 
             // 以字节流方式处理请求头
 //            byte[] buffer = new byte[8192];
@@ -321,6 +327,8 @@ public class LightProxy implements Runnable {
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
+        } finally {
+            closeQuietly(clientSocket); // 确保客户端连接关闭
         }
     }
 
@@ -372,6 +380,17 @@ public class LightProxy implements Runnable {
         System.out.println("Handle error response !");
 
 
+    }
+
+    // 安全关闭socket
+    private static void closeQuietly(Socket socket) {
+        try {
+            if (socket != null && !socket.isClosed()) {
+                socket.close();
+            }
+        } catch (IOException e) {
+            // 忽略关闭错误
+        }
     }
 
     private static void sendErrorResponse(OutputStream clientOutput, int code, String message){
