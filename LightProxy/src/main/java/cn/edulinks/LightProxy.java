@@ -7,11 +7,21 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
 
+/**
+ * LightProxy — 轻量级 HTTP / SOCKS5 代理服务器
+ *
+ * 支持:
+ *   - HTTP 代理 (GET/POST/CONNECT 隧道)
+ *   - SOCKS5 代理 (CONNECT 命令)
+ *   - 双端口独立配置，通过 light.properties 控制
+ *
+ * @author OpenClaw AI Assistant (shiqiang)
+ * @since  2024-04-12
+ */
 public class LightProxy implements Runnable {
-    private ServerSocket serverSocket;
 
-    // 用线程池替代 ArrayList<Thread>，避免线程泄漏
-    private static final ExecutorService threadPool = Executors.newCachedThreadPool(
+    // --- 共享线程池 (SOCKS5 和 HTTP 共用) ---
+    private static ExecutorService threadPool = Executors.newCachedThreadPool(
             r -> {
                 Thread t = new Thread(r, "LightProxy-Worker");
                 t.setDaemon(true);
@@ -20,46 +30,121 @@ public class LightProxy implements Runnable {
     );
 
     /**
-     * 信号量
+     * 获取共享线程池（供 Socks5Proxy 使用）
      */
-    private volatile boolean running = true;
+    public static ExecutorService getThreadPool() {
+        return threadPool;
+    }
+
+    // --- HTTP 代理 ---
+    private ServerSocket httpServerSocket;
+    private volatile boolean httpRunning = true;
+
+    // --- SOCKS5 代理 ---
+    private Socks5Proxy socks5Proxy;
+
+    // --- 配置 ---
+    private final ProxyConfig config;
+
+    /**
+     * 优雅关闭钩子
+     */
+    public static void setupShutdownHook(LightProxy instance) {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("\n[Shutdown] LightProxy stopping...");
+            instance.stop();
+        }));
+    }
 
     public static void main(String[] args) {
-        LightProxy hps = new LightProxy();
-        hps.listen();
+        ProxyConfig config = new ProxyConfig();
+        config.printSummary();
+
+        LightProxy proxy = new LightProxy(config);
+        setupShutdownHook(proxy);
+        proxy.start();
     }
 
-    public LightProxy() {
-        int port = 8080;
+    public LightProxy(ProxyConfig config) {
+        this.config = config;
+    }
 
-        try {
-            serverSocket = new ServerSocket(port);
-            System.out.println("Http Proxy Server listen at : " + port);
-            running = true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            running = false;
+    /**
+     * 启动所有启用的代理服务
+     */
+    public void start() {
+        // 启动 HTTP 代理
+        if (config.isHttpEnabled()) {
+            new Thread(this, "HTTP-Listener").start();
+        } else {
+            System.out.println("[HTTP] Disabled by config.");
         }
 
-        new Thread(this).start();
+        // 启动 SOCKS5 代理
+        if (config.isSocks5Enabled()) {
+            socks5Proxy = new Socks5Proxy(config.getSocks5Port(), config);
+            new Thread(socks5Proxy, "SOCKS5-Listener").start();
+        } else {
+            System.out.println("[SOCKS5] Disabled by config.");
+        }
+
+        // 如果两个都没启用，打印提示并退出
+        if (!config.isHttpEnabled() && !config.isSocks5Enabled()) {
+            System.err.println("No proxy service enabled. Check light.properties.");
+        }
     }
 
-    public void listen() {
-        while (running) {
+    /**
+     * 停止所有代理服务
+     */
+    public void stop() {
+        httpRunning = false;
+        try {
+            if (httpServerSocket != null && !httpServerSocket.isClosed()) {
+                httpServerSocket.close();
+            }
+        } catch (IOException ignored) {
+        }
+        if (socks5Proxy != null) {
+            socks5Proxy.stop();
+        }
+        threadPool.shutdown();
+    }
+
+    /**
+     * HTTP 代理监听线程
+     */
+    @Override
+    public void run() {
+        int port = config.getHttpPort();
+        try {
+            httpServerSocket = new ServerSocket(port);
+            System.out.println("[HTTP] Listening on port " + port);
+            httpRunning = true;
+        } catch (Exception e) {
+            System.err.println("[HTTP] Failed to listen on port " + port + ": " + e.getMessage());
+            httpRunning = false;
+            return;
+        }
+
+        while (httpRunning) {
             try {
-                Socket clientSocket = serverSocket.accept();
-                // 提交到线程池处理，不再手动管理线程列表
+                Socket clientSocket = httpServerSocket.accept();
                 threadPool.submit(() -> parseRequest(clientSocket));
             } catch (SocketException e) {
-                if (running) {
-                    System.out.println("Socket Error: " + e.getMessage());
+                if (httpRunning) {
+                    System.err.println("[HTTP] Socket error: " + e.getMessage());
                 }
             } catch (Exception e) {
-                System.out.println("Accept Error!");
+                System.err.println("[HTTP] Accept error: " + e.getMessage());
                 e.printStackTrace();
             }
         }
     }
+
+    // ========================================================================
+    //  HTTP 代理核心逻辑
+    // ========================================================================
 
     /**
      * 解析用户请求，区分 HTTP 和 CONNECT 方法
@@ -106,8 +191,7 @@ public class LightProxy implements Runnable {
             if ("CONNECT".equalsIgnoreCase(method)) {
                 handleConnect(pathOrHost, clientSocket);
             } else {
-                // 普通 HTTP 请求（GET / POST / PUT / DELETE ...）
-                // 读取请求体
+                // 普通 HTTP 请求
                 byte[] bodyBytes = new byte[contentLength];
                 int bytesRead = 0;
                 while (bytesRead < contentLength) {
@@ -115,7 +199,6 @@ public class LightProxy implements Runnable {
                     if (read == -1) break;
                     bytesRead += read;
                 }
-                String body = new String(bodyBytes, StandardCharsets.UTF_8);
 
                 // 解析目标主机和端口
                 String host = headers.getOrDefault("Host", "").split(":")[0].trim();
@@ -137,21 +220,13 @@ public class LightProxy implements Runnable {
                 forwardRequest(method, protocol, host, port, pathOrHost, headers, bodyBytes, clientSocket);
             }
         } catch (Exception e) {
-            System.out.println("Parse Request Error!");
-            e.printStackTrace();
-            try {
-                clientSocket.close();
-            } catch (IOException ignored) {
-            }
+            System.err.println("[HTTP] Parse Request Error: " + e.getMessage());
+            try { clientSocket.close(); } catch (IOException ignored) {}
         }
     }
 
     /**
      * 处理 CONNECT 方法 — 建立 HTTPS 隧道
-     *
-     * CONNECT www.example.com:443 HTTP/1.1
-     *
-     * 代理不解析 TLS 数据，只做 TCP 透传。
      */
     private static void handleConnect(String hostPort, Socket clientSocket) {
         String[] parts = hostPort.split(":");
@@ -165,15 +240,14 @@ public class LightProxy implements Runnable {
             }
         }
 
-        System.out.println("[CONNECT] Tunnel to " + host + ":" + port);
+        System.out.println("[HTTP CONNECT] Tunnel to " + host + ":" + port);
 
         try {
-            // 连接目标服务器
             Socket targetSocket = new Socket(host, port);
-            targetSocket.setSoTimeout(0); // 隧道模式不设超时，保持长连接
+            targetSocket.setSoTimeout(0);
             clientSocket.setSoTimeout(0);
 
-            // 向客户端返回 200 Connection Established
+            // 返回 200 Connection Established
             String connectResponse = "HTTP/1.1 200 Connection Established\r\n" +
                     "Proxy-Agent: LightProxy/1.0\r\n" +
                     "Connection: keep-alive\r\n" +
@@ -181,52 +255,49 @@ public class LightProxy implements Runnable {
             clientSocket.getOutputStream().write(connectResponse.getBytes(StandardCharsets.UTF_8));
             clientSocket.getOutputStream().flush();
 
-            System.out.println("[CONNECT] Tunnel established: " + host + ":" + port);
+            System.out.println("[HTTP CONNECT] Tunnel established: " + host + ":" + port);
 
-            // 双向透传：创建两个线程分别处理两个方向的数据流
-            Thread clientToTarget = new Thread(() -> {
+            Thread c2t = new Thread(() -> {
                 try {
                     pipe(clientSocket.getInputStream(), targetSocket.getOutputStream());
                 } catch (IOException e) {
-                    System.out.println("[CONNECT] client→target pipe closed: " + e.getMessage());
+                    // 正常断开
                 } finally {
                     closeQuietly(targetSocket);
                     closeQuietly(clientSocket);
                 }
             }, "Pipe-C2T-" + hostPort);
-            clientToTarget.setDaemon(true);
+            c2t.setDaemon(true);
 
-            Thread targetToClient = new Thread(() -> {
+            Thread t2c = new Thread(() -> {
                 try {
                     pipe(targetSocket.getInputStream(), clientSocket.getOutputStream());
                 } catch (IOException e) {
-                    System.out.println("[CONNECT] target→client pipe closed: " + e.getMessage());
+                    // 正常断开
                 } finally {
                     closeQuietly(targetSocket);
                     closeQuietly(clientSocket);
                 }
             }, "Pipe-T2C-" + hostPort);
-            targetToClient.setDaemon(true);
+            t2c.setDaemon(true);
 
-            clientToTarget.start();
-            targetToClient.start();
+            c2t.start();
+            t2c.start();
+            c2t.join();
+            t2c.join();
 
-            // 等待任一方向断开
-            clientToTarget.join();
-            targetToClient.join();
-
-            System.out.println("[CONNECT] Tunnel closed: " + host + ":" + port);
+            System.out.println("[HTTP CONNECT] Tunnel closed: " + host + ":" + port);
 
         } catch (ConnectException e) {
-            System.out.println("[CONNECT] Cannot connect to " + host + ":" + port);
+            System.err.println("[HTTP CONNECT] Cannot connect to " + host + ":" + port);
             try {
-                sendErrorResponse(clientSocket.getOutputStream(), 504, "Gateway Timeout - Cannot reach target");
+                sendErrorResponse(clientSocket.getOutputStream(), 504, "Gateway Timeout");
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
             closeQuietly(clientSocket);
         } catch (IOException e) {
-            System.out.println("[CONNECT] IO Error: " + e.getMessage());
+            System.err.println("[HTTP CONNECT] IO Error: " + e.getMessage());
             try {
                 sendErrorResponse(clientSocket.getOutputStream(), 502, "Bad Gateway");
             } catch (IOException ex) {
@@ -235,24 +306,6 @@ public class LightProxy implements Runnable {
             closeQuietly(clientSocket);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        }
-    }
-
-    /**
-     * 管道传输：从 src 读到 dst，直到 EOF
-     * 使用 8KB 缓冲区，比单字节 readLine 高效得多
-     */
-    private static void pipe(InputStream src, OutputStream dst) throws IOException {
-        byte[] buffer = new byte[8192];
-        int bytesRead;
-        while ((bytesRead = src.read(buffer)) != -1) {
-            dst.write(buffer, 0, bytesRead);
-            dst.flush();
-        }
-        // 读到 EOF 时关闭输出端，通知对端
-        try {
-            dst.flush();
-        } catch (IOException ignored) {
         }
     }
 
@@ -289,14 +342,14 @@ public class LightProxy implements Runnable {
             }
             requestBuilder.append("\r\n");
 
-            // 发送请求头 + body（用字节数组，避免编码问题）
+            // 发送请求头 + body
             targetOutput.write(requestBuilder.toString().getBytes(StandardCharsets.UTF_8));
             if (bodyBytes.length > 0) {
                 targetOutput.write(bodyBytes);
             }
             targetOutput.flush();
 
-            // 读取目标服务器响应
+            // 读取响应
             String statusLine = readLine(targetInput);
             if (statusLine == null) {
                 sendErrorResponse(clientOutput, 502, "Empty response from upstream");
@@ -311,10 +364,10 @@ public class LightProxy implements Runnable {
             while ((headerLine = readLine(targetInput)) != null && !headerLine.isEmpty()) {
                 clientOutput.write((headerLine + "\r\n").getBytes(StandardCharsets.UTF_8));
             }
-            clientOutput.write("\r\n".getBytes(StandardCharsets.UTF_8));
+            clientOutput.write("\r\n".getBytes());
             clientOutput.flush();
 
-            // 转发响应体（二进制透传）
+            // 转发响应体
             byte[] buffer = new byte[8192];
             int bytesRead;
             while ((bytesRead = targetInput.read(buffer)) != -1) {
@@ -322,23 +375,32 @@ public class LightProxy implements Runnable {
                 clientOutput.flush();
             }
 
-            System.out.println("[HTTP] Response sent to client (status " + statusCode + ")");
+            System.out.println("[HTTP] Response sent (status " + statusCode + ")");
 
         } catch (ConnectException e) {
-            try {
-                sendErrorResponse(clientSocket.getOutputStream(), 504, "Gateway Timeout");
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
+            try { sendErrorResponse(clientSocket.getOutputStream(), 504, "Gateway Timeout"); } catch (IOException ex) { ex.printStackTrace(); }
         } catch (IOException e) {
-            try {
-                sendErrorResponse(clientSocket.getOutputStream(), 502, "Bad Gateway");
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
+            try { sendErrorResponse(clientSocket.getOutputStream(), 502, "Bad Gateway"); } catch (IOException ex) { ex.printStackTrace(); }
         } finally {
             closeQuietly(clientSocket);
         }
+    }
+
+    // ========================================================================
+    //  工具方法
+    // ========================================================================
+
+    /**
+     * 管道传输：从 src 读到 dst，直到 EOF
+     */
+    public static void pipe(InputStream src, OutputStream dst) throws IOException {
+        byte[] buffer = new byte[8192];
+        int bytesRead;
+        while ((bytesRead = src.read(buffer)) != -1) {
+            dst.write(buffer, 0, bytesRead);
+            dst.flush();
+        }
+        try { dst.flush(); } catch (IOException ignored) {}
     }
 
     /**
@@ -373,7 +435,7 @@ public class LightProxy implements Runnable {
         return 500;
     }
 
-    private static void closeQuietly(Socket socket) {
+    public static void closeQuietly(Socket socket) {
         try {
             if (socket != null && !socket.isClosed()) {
                 socket.close();
@@ -382,9 +444,8 @@ public class LightProxy implements Runnable {
         }
     }
 
-    private static void sendErrorResponse(OutputStream clientOutput, int code, String message) {
+    public static void sendErrorResponse(OutputStream clientOutput, int code, String message) {
         try {
-            // 修复：正确的 HTTP 响应格式（头在前，空行后是 body）
             String response = "HTTP/1.1 " + code + " " + message + "\r\n" +
                     "Content-Type: text/plain; charset=utf-8\r\n" +
                     "Connection: close\r\n" +
@@ -398,28 +459,18 @@ public class LightProxy implements Runnable {
         }
     }
 
-    // ===== 以下为旧版方法，保留但不再主动调用 =====
+    // ===== 以下为旧版方法 =====
 
-    /**
-     * @deprecated 已被 parseRequest + forwardRequest 替代
-     */
     @Deprecated
     private static void handleRequest(Socket socket_client) {
-        // ... old code kept for reference
         System.out.println("handleRequest (deprecated) called");
     }
 
-    /**
-     * @deprecated 已被 parseRequest + forwardRequest 替代
-     */
     @Deprecated
     private static void handleClientRequest(Socket socket_client) {
         System.out.println("handleClientRequest (deprecated) called");
     }
 
-    /**
-     * @deprecated
-     */
     @Deprecated
     private static void sendResponseToClient(Map<String, String> urlResult, BufferedWriter proxyToClientBw) {
         System.out.println("sendResponseToClient (deprecated) called");
@@ -427,10 +478,5 @@ public class LightProxy implements Runnable {
 
     private static void handleErrorResponse(InputStream targetInput, OutputStream clientOutput, int statusCode, Map<String, String> headers) throws IOException {
         System.out.println("Handle error response!");
-    }
-
-    @Override
-    public void run() {
-        System.out.println("LightProxy main thread started.");
     }
 }
