@@ -10,9 +10,9 @@ Which will support kafka / activemq as event / message channel.
 * LightServer, automation server
 
 # Light Proxy Feature
-* 支持 HTTP 请求代理
+* 支持 HTTP / HTTPS 请求代理
 * 多个线程响应用户请求
-* 支持 SOCKS5
+* 支持 SOCKS5 / SOCKS4
 
 # TODO
 * 可以考虑支持2层的代理架构，下层与上层之间实现加密传输
