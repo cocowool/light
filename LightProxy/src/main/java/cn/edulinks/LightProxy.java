@@ -43,6 +43,9 @@ public class LightProxy implements Runnable {
     // --- SOCKS5 代理 ---
     private Socks5Proxy socks5Proxy;
 
+    // --- SOCKS4 代理 ---
+    private Socks4Proxy socks4Proxy;
+
     // --- 配置 ---
     private final ProxyConfig config;
 
@@ -88,8 +91,16 @@ public class LightProxy implements Runnable {
             System.out.println("[SOCKS5] Disabled by config.");
         }
 
-        // 如果两个都没启用，打印提示并退出
-        if (!config.isHttpEnabled() && !config.isSocks5Enabled()) {
+        // 启动 SOCKS4 代理
+        if (config.isSocks4Enabled()) {
+            socks4Proxy = new Socks4Proxy(config.getSocks4Port(), config);
+            new Thread(socks4Proxy, "SOCKS4-Listener").start();
+        } else {
+            System.out.println("[SOCKS4] Disabled by config.");
+        }
+
+        // 如果三个都没启用，打印提示并退出
+        if (!config.isHttpEnabled() && !config.isSocks5Enabled() && !config.isSocks4Enabled()) {
             System.err.println("No proxy service enabled. Check light.properties.");
         }
     }
@@ -109,6 +120,9 @@ public class LightProxy implements Runnable {
             socks5Proxy.stop();
         }
         threadPool.shutdown();
+        if (socks4Proxy != null) {
+            socks4Proxy.stop();
+        }
     }
 
     /**

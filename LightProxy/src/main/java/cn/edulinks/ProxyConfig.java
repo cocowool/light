@@ -23,6 +23,10 @@ public class ProxyConfig {
     private boolean socks5Enabled = true;
     private int socks5Port = 1080;
 
+    // SOCKS4 代理
+    private boolean socks4Enabled = false;
+    private int socks4Port = 1081;
+
     // 通用
     private int threadPoolMax = 0;      // 0 = 无上限
     private int socketTimeout = 30000;  // 30s
@@ -79,6 +83,9 @@ public class ProxyConfig {
         socks5Enabled = Boolean.parseBoolean(props.getProperty("socks5.enabled", "true"));
         socks5Port = parseInt(props.getProperty("socks5.port", "1080"), 1080);
 
+        socks4Enabled = Boolean.parseBoolean(props.getProperty("socks4.enabled", "false"));
+        socks4Port = parseInt(props.getProperty("socks4.port", "1081"), 1081);
+
         threadPoolMax = parseInt(props.getProperty("thread.pool.max", "0"), 0);
         socketTimeout = parseInt(props.getProperty("socket.timeout", "30000"), 30000);
         connectTimeout = parseInt(props.getProperty("connect.timeout", "10000"), 10000);
@@ -98,6 +105,8 @@ public class ProxyConfig {
         props.setProperty("http.port", String.valueOf(httpPort));
         props.setProperty("socks5.enabled", String.valueOf(socks5Enabled));
         props.setProperty("socks5.port", String.valueOf(socks5Port));
+        props.setProperty("socks4.enabled", String.valueOf(socks4Enabled));
+        props.setProperty("socks4.port", String.valueOf(socks4Port));
         props.setProperty("thread.pool.max", String.valueOf(threadPoolMax));
         props.setProperty("socket.timeout", String.valueOf(socketTimeout));
         props.setProperty("connect.timeout", String.valueOf(connectTimeout));
@@ -125,6 +134,8 @@ public class ProxyConfig {
     public int getSocketTimeout() { return socketTimeout; }
     public int getConnectTimeout() { return connectTimeout; }
     public String getConfigPath() { return configPath; }
+    public boolean isSocks4Enabled() { return socks4Enabled; }
+    public int getSocks4Port() { return socks4Port; }
 
     // --- Setters (for future UI) ---
     public void setHttpEnabled(boolean enabled) { this.httpEnabled = enabled; }
@@ -134,6 +145,8 @@ public class ProxyConfig {
     public void setThreadPoolMax(int max) { this.threadPoolMax = max; }
     public void setSocketTimeout(int timeout) { this.socketTimeout = timeout; }
     public void setConnectTimeout(int timeout) { this.connectTimeout = timeout; }
+    public void setSocks4Enabled(boolean enabled) { this.socks4Enabled = enabled; }
+    public void setSocks4Port(int port) { this.socks4Port = port; }
 
     /**
      * 打印当前配置（调试用）
@@ -142,6 +155,7 @@ public class ProxyConfig {
         System.out.println("=== LightProxy Config ===");
         System.out.println("  HTTP Proxy:    " + (httpEnabled ? "enabled (port " + httpPort + ")" : "disabled"));
         System.out.println("  SOCKS5 Proxy:  " + (socks5Enabled ? "enabled (port " + socks5Port + ")" : "disabled"));
+        System.out.println("  SOCKS4 Proxy:  " + (socks4Enabled ? "enabled (port " + socks4Port + ")" : "disabled"));
         System.out.println("  Socket Timeout:   " + socketTimeout + "ms");
         System.out.println("  Connect Timeout:  " + connectTimeout + "ms");
         System.out.println("========================");
